@@ -229,6 +229,12 @@
       box-shadow: 0 10px 20px rgba(28, 63, 170, 0.32);
     }
 
+    .table-config .primary {
+      border-radius: 999px;
+      color: #fff;
+      padding: 10px 22px;
+    }
+
     .table-actions button:disabled {
       background: #cbd5f5;
       color: #64748b;
@@ -836,8 +842,12 @@
       tableConfigTitle.textContent = `${tableData.name} Configuration`;
       tableNameInput.value = tableData.name;
       tableConfigStatus.textContent = "";
-      choiceField.classList.remove("is-visible");
       choiceInput.value = "";
+      if (fieldTypeSelect.value === "Choice") {
+        choiceField.classList.add("is-visible");
+      } else {
+        choiceField.classList.remove("is-visible");
+      }
       renderFieldList();
     };
 
