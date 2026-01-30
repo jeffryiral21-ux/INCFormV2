@@ -521,7 +521,7 @@
         <div class="dropdown" data-submenu="records">
           <button type="button" class="active">New Member Record</button>
           <button type="button">Modify Member Record</button>
-          <button type="button">Member Information</button>
+          <button type="button" data-records-view="member-info">Member Information</button>
           <button type="button">Member Tungkulin Information</button>
           <button type="button">Find Missing Control Sequence</button>
           <button type="button">Override Control Number Assignment</button>
@@ -777,7 +777,10 @@
           parentButton.click();
         }
 
-        if (submenu.dataset.submenu === "records" && target.textContent === "Member Information") {
+        if (
+          submenu.dataset.submenu === "records" &&
+          target.dataset.recordsView === "member-info"
+        ) {
           renderMemberInfoList(contentArea);
           return;
         }
@@ -794,6 +797,11 @@
     const renderMemberInfoList = (contentArea) => {
       contentArea.innerHTML = `
         <strong>Member Information selected.</strong>
+        <div class="table-actions" style="margin-top: 16px;">
+          <button type="button" class="primary">New</button>
+          <button type="button" class="secondary">Delete</button>
+          <button type="button" class="ghost">Edit</button>
+        </div>
         <div class="table-list" style="margin-top: 12px;">
           <table>
             <thead>
