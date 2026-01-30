@@ -347,6 +347,14 @@
       display: block;
     }
 
+    .reference-field {
+      display: none;
+    }
+
+    .reference-field.is-visible {
+      display: block;
+    }
+
     .table-config label {
       font-size: 13px;
       color: #475569;
@@ -646,6 +654,7 @@
                   <option value="Image">Image</option>
                   <option value="Checkbox">Checkbox</option>
                   <option value="Number">Number</option>
+                  <option value="Reference">Reference</option>
                 </select>
               </div>
               <div class="choice-field" id="choiceField">
@@ -655,6 +664,12 @@
                   id="choiceInput"
                   placeholder="Enter choices separated by commas"
                 />
+              </div>
+              <div class="reference-field" id="referenceField">
+                <label for="referenceTableSelect">Reference Table</label>
+                <select id="referenceTableSelect">
+                  <option value="">Select a table</option>
+                </select>
               </div>
               <button type="submit" class="primary">Add Field</button>
             </form>
@@ -713,6 +728,8 @@
     const fieldTypeSelect = document.getElementById("fieldTypeSelect");
     const choiceField = document.getElementById("choiceField");
     const choiceInput = document.getElementById("choiceInput");
+    const referenceField = document.getElementById("referenceField");
+    const referenceTableSelect = document.getElementById("referenceTableSelect");
     const fieldListBody = document.getElementById("fieldListBody");
     const deleteFieldButton = document.getElementById("deleteField");
     const cloneFieldButton = document.getElementById("cloneField");
@@ -848,6 +865,7 @@
                   <option value="Image" ${field.type === "Image" ? "selected" : ""}>Image</option>
                   <option value="Checkbox" ${field.type === "Checkbox" ? "selected" : ""}>Checkbox</option>
                   <option value="Number" ${field.type === "Number" ? "selected" : ""}>Number</option>
+                  <option value="Reference" ${field.type === "Reference" ? "selected" : ""}>Reference</option>
                 </select>
               </td>
             </tr>
@@ -928,10 +946,17 @@
       tableNameInput.value = tableData.name;
       tableConfigStatus.textContent = "";
       choiceInput.value = "";
+      referenceTableSelect.value = "";
+      refreshReferenceOptions();
       if (fieldTypeSelect.value === "Choice") {
         choiceField.classList.add("is-visible");
       } else {
         choiceField.classList.remove("is-visible");
+      }
+      if (fieldTypeSelect.value === "Reference") {
+        referenceField.classList.add("is-visible");
+      } else {
+        referenceField.classList.remove("is-visible");
       }
       renderFieldList();
     };
@@ -967,11 +992,23 @@
       const fieldName = fieldNameInput.value.trim();
       const fieldType = fieldTypeSelect.value;
       if (!fieldName || !fieldType) return;
-      tablesData[currentTableKey].fields.push({ name: fieldName, type: fieldType });
+      const fieldData = { name: fieldName, type: fieldType };
+      if (fieldType === "Choice" && choiceInput.value.trim()) {
+        fieldData.choices = choiceInput.value
+          .split(",")
+          .map((choice) => choice.trim())
+          .filter(Boolean);
+      }
+      if (fieldType === "Reference" && referenceTableSelect.value) {
+        fieldData.referenceTable = referenceTableSelect.value;
+      }
+      tablesData[currentTableKey].fields.push(fieldData);
       fieldNameInput.value = "";
       fieldTypeSelect.value = "";
       choiceInput.value = "";
       choiceField.classList.remove("is-visible");
+      referenceTableSelect.value = "";
+      referenceField.classList.remove("is-visible");
       renderFieldList();
       saveTablesData();
     });
@@ -1023,7 +1060,30 @@
         choiceField.classList.remove("is-visible");
         choiceInput.value = "";
       }
+
+      if (fieldTypeSelect.value === "Reference") {
+        refreshReferenceOptions();
+        referenceField.classList.add("is-visible");
+      } else {
+        referenceField.classList.remove("is-visible");
+        referenceTableSelect.value = "";
+      }
     });
+
+    const refreshReferenceOptions = () => {
+      if (!referenceTableSelect) return;
+      const currentValue = referenceTableSelect.value;
+      referenceTableSelect.innerHTML = '<option value="">Select a table</option>';
+      Object.entries(tablesData).forEach(([key, data]) => {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = data.name;
+        referenceTableSelect.appendChild(option);
+      });
+      if (currentValue) {
+        referenceTableSelect.value = currentValue;
+      }
+    };
 
     syncTableList();
 
