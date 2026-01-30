@@ -590,7 +590,7 @@
         <div class="tables-layout">
           <div>
             <div class="table-actions">
-              <button type="button" class="primary">New</button>
+              <button type="button" class="primary" id="newTable">New</button>
               <button type="button" class="secondary" id="deleteTable" disabled>Delete</button>
               <button type="button" class="ghost" id="cloneTable" disabled>Clone</button>
             </div>
@@ -602,20 +602,7 @@
                     <th>Name</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td><input type="checkbox" class="table-select" /></td>
-                    <td><button type="button" class="table-name" data-table="membership">Membership Categories</button></td>
-                  </tr>
-                  <tr>
-                    <td><input type="checkbox" class="table-select" /></td>
-                    <td><button type="button" class="table-name" data-table="locale">Locale Directory</button></td>
-                  </tr>
-                  <tr>
-                    <td><input type="checkbox" class="table-select" /></td>
-                    <td><button type="button" class="table-name" data-table="forms">Form Templates</button></td>
-                  </tr>
-                </tbody>
+                <tbody id="tableListBody"></tbody>
               </table>
             </div>
             <div class="content-area" id="tablesContent">
@@ -714,10 +701,10 @@
     const navButtons = document.querySelectorAll("#mainNav button");
     const panels = document.querySelectorAll("[data-panel]");
     const submenuGroups = document.querySelectorAll(".dropdown[data-submenu]");
-    const tableSelects = document.querySelectorAll(".table-select");
+    const newTableButton = document.getElementById("newTable");
     const deleteButton = document.getElementById("deleteTable");
     const cloneButton = document.getElementById("cloneTable");
-    const tableNameButtons = document.querySelectorAll(".table-name");
+    const tableListBody = document.getElementById("tableListBody");
     const tableConfig = document.getElementById("tableConfig");
     const tableConfigTitle = document.getElementById("tableConfigTitle");
     const updateTableConfigButton = document.getElementById("updateTableConfig");
@@ -791,14 +778,11 @@
     });
 
     const updateTableActions = () => {
-      const isSelected = Array.from(tableSelects).some((checkbox) => checkbox.checked);
+      const selects = tableListBody.querySelectorAll(".table-select");
+      const isSelected = Array.from(selects).some((checkbox) => checkbox.checked);
       deleteButton.disabled = !isSelected;
       cloneButton.disabled = !isSelected;
     };
-
-    tableSelects.forEach((checkbox) => {
-      checkbox.addEventListener("change", updateTableActions);
-    });
 
     const STORAGE_KEY = "incform_tables_db";
     const defaultTablesData = {
@@ -840,6 +824,28 @@
 
     let currentTableKey = null;
     let draggedFieldIndex = null;
+
+    const renderTableList = () => {
+      tableListBody.innerHTML = Object.entries(tablesData)
+        .map(
+          ([key, data]) => `
+            <tr>
+              <td><input type="checkbox" class="table-select" /></td>
+              <td><button type="button" class="table-name" data-table="${key}">${data.name}</button></td>
+            </tr>
+          `,
+        )
+        .join("");
+
+      tableListBody.querySelectorAll(".table-select").forEach((checkbox) => {
+        checkbox.addEventListener("change", updateTableActions);
+      });
+      tableListBody.querySelectorAll(".table-name").forEach((button) => {
+        button.addEventListener("click", () => {
+          openTableConfig(button.dataset.table);
+        });
+      });
+    };
 
     const renderFieldList = () => {
       if (!currentTableKey) return;
@@ -961,12 +967,6 @@
       renderFieldList();
     };
 
-    tableNameButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        openTableConfig(button.dataset.table);
-      });
-    });
-
     const saveTablesData = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tablesData));
       if (tableConfigStatus) {
@@ -1039,15 +1039,6 @@
       saveTablesData();
     });
 
-    const syncTableList = () => {
-      tableNameButtons.forEach((button) => {
-        const key = button.dataset.table;
-        if (tablesData[key]?.name) {
-          button.textContent = tablesData[key].name;
-        }
-      });
-    };
-
     updateTableConfigButton.addEventListener("click", () => {
       if (!currentTableKey) return;
       saveTablesData();
@@ -1085,7 +1076,19 @@
       }
     };
 
-    syncTableList();
+    newTableButton.addEventListener("click", () => {
+      const nextIndex = Object.keys(tablesData).length + 1;
+      const newKey = `table_${Date.now()}`;
+      tablesData[newKey] = {
+        name: `New Table ${nextIndex}`,
+        fields: [],
+      };
+      saveTablesData();
+      renderTableList();
+      openTableConfig(newKey);
+    });
+
+    renderTableList();
 
   </script>
 </body>
