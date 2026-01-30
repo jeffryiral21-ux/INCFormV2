@@ -292,6 +292,7 @@
       overflow-y: auto;
       z-index: 20;
       box-shadow: 0 24px 40px rgba(15, 23, 42, 0.25);
+      margin-top: 0;
     }
 
     .modal-backdrop {
@@ -585,6 +586,7 @@
             <li>Search, filter, and manage lookup tables for the system.</li>
           </ul>
         </div>
+        <div id="tableConfigAnchor"></div>
         <section class="table-config" id="tableConfig" hidden>
           <div class="table-config-header">
             <h4 id="tableConfigTitle">Table Configuration</h4>
@@ -665,6 +667,7 @@
     const tableNameInput = document.getElementById("tableNameInput");
     const closeTableConfig = document.getElementById("closeTableConfig");
     const modalBackdrop = document.getElementById("modalBackdrop");
+    const tableConfigAnchor = document.getElementById("tableConfigAnchor");
     const fieldForm = document.getElementById("fieldForm");
     const fieldNameInput = document.getElementById("fieldNameInput");
     const fieldTypeSelect = document.getElementById("fieldTypeSelect");
@@ -802,9 +805,13 @@
       if (tableKey === "forms") {
         tableConfig.classList.add("modal");
         modalBackdrop.classList.add("active");
+        document.body.appendChild(tableConfig);
       } else {
         tableConfig.classList.remove("modal");
         modalBackdrop.classList.remove("active");
+        if (tableConfigAnchor) {
+          tableConfigAnchor.after(tableConfig);
+        }
       }
       tableNameInput.value = tableData.name;
       renderFieldList();
@@ -868,6 +875,9 @@
         tableConfig.hidden = true;
         tableConfig.classList.remove("modal");
         modalBackdrop.classList.remove("active");
+        if (tableConfigAnchor) {
+          tableConfigAnchor.after(tableConfig);
+        }
       }
     };
 
