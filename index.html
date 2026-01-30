@@ -413,6 +413,14 @@
       color: #475569;
     }
 
+    .field-row {
+      cursor: grab;
+    }
+
+    .field-row.is-dragging {
+      opacity: 0.6;
+    }
+
     .content-area {
       margin-top: 20px;
       padding: 20px;
@@ -814,6 +822,7 @@
     const tablesData = loadTablesData();
 
     let currentTableKey = null;
+    let draggedFieldIndex = null;
 
     const renderFieldList = () => {
       if (!currentTableKey) return;
@@ -821,7 +830,7 @@
       fieldListBody.innerHTML = fields
         .map(
           (field, index) => `
-            <tr>
+            <tr class="field-row" draggable="true" data-index="${index}">
               <td><input type="checkbox" class="field-select" data-index="${index}" /></td>
               <td>
                 <input
@@ -864,6 +873,40 @@
           if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
           tablesData[currentTableKey].fields[index].type = event.target.value;
           saveTablesData();
+        });
+      });
+      fieldListBody.querySelectorAll(".field-row").forEach((row) => {
+        row.addEventListener("dragstart", (event) => {
+          draggedFieldIndex = Number(event.currentTarget.dataset.index);
+          event.currentTarget.classList.add("is-dragging");
+          event.dataTransfer.setData("text/plain", String(draggedFieldIndex));
+          event.dataTransfer.effectAllowed = "move";
+        });
+        row.addEventListener("dragend", (event) => {
+          event.currentTarget.classList.remove("is-dragging");
+          draggedFieldIndex = null;
+        });
+        row.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+        });
+        row.addEventListener("drop", (event) => {
+          event.preventDefault();
+          const targetIndex = Number(event.currentTarget.dataset.index);
+          const sourceIndex =
+            draggedFieldIndex ?? Number(event.dataTransfer.getData("text/plain"));
+          if (
+            Number.isNaN(sourceIndex) ||
+            Number.isNaN(targetIndex) ||
+            sourceIndex === targetIndex
+          ) {
+            return;
+          }
+          const fieldsList = tablesData[currentTableKey].fields;
+          const [movedField] = fieldsList.splice(sourceIndex, 1);
+          fieldsList.splice(targetIndex, 0, movedField);
+          saveTablesData();
+          renderFieldList();
         });
       });
     };
