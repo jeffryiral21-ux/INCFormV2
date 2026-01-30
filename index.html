@@ -983,7 +983,7 @@
       `;
       const newButton = contentArea.querySelector("#newMemberInfo");
       if (newButton) {
-        newButton.addEventListener("click", () => openMemberInfoModal(tableFields));
+        newButton.addEventListener("click", () => openMemberInfoModal("Member Information"));
       }
     };
 
@@ -1003,6 +1003,9 @@
           { name: "Name", type: "String" },
           { name: "Locale", type: "String" },
           { name: "Status", type: "Choice", choices: ["Active", "Inactive"] },
+          { name: "Kapisanan", type: "Choice", choices: ["Buklod", "Kadiwa", "Binhi"] },
+          { name: "Handog", type: "Choice", choices: ["Yes", "No"] },
+          { name: "Kalagayang Sibil", type: "Choice", choices: ["Single", "Married", "Widowed"] },
           { name: "Member Photo", type: "Image" },
         ],
       },
@@ -1029,11 +1032,34 @@
       },
     };
 
+    const normalizeTablesData = (data) => {
+      if (!data.member_info) {
+        data.member_info = structuredClone(defaultTablesData.member_info);
+        return data;
+      }
+      const choiceDefaults = {
+        Status: ["Active", "Inactive"],
+        Kapisanan: ["Buklod", "Kadiwa", "Binhi"],
+        Handog: ["Yes", "No"],
+        "Kalagayang Sibil": ["Single", "Married", "Widowed"],
+      };
+      data.member_info.fields = data.member_info.fields.map((field) => {
+        if (field.type === "Choice" && (!field.choices || field.choices.length === 0)) {
+          const defaults = choiceDefaults[field.name];
+          if (defaults) {
+            return { ...field, choices: defaults };
+          }
+        }
+        return field;
+      });
+      return data;
+    };
+
     const loadTablesData = () => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return structuredClone(defaultTablesData);
       try {
-        return JSON.parse(saved);
+        return normalizeTablesData(JSON.parse(saved));
       } catch (error) {
         console.warn("Failed to parse saved table data, reverting to defaults.", error);
         return structuredClone(defaultTablesData);
@@ -1312,8 +1338,10 @@
 
     let cropperState = null;
 
-    const openMemberInfoModal = (tableFields) => {
+    const openMemberInfoModal = (tableName) => {
       if (!memberInfoModal || !memberInfoFormFields) return;
+      const memberInfoTable = getTableByName(tableName);
+      const tableFields = memberInfoTable?.fields ?? [];
       memberInfoFormFields.innerHTML = tableFields
         .map((field) => buildFieldInput(field))
         .join("");
@@ -1331,13 +1359,15 @@
     const buildFieldInput = (field) => {
       const fieldId = `member-${field.name.replace(/\s+/g, "-").toLowerCase()}`;
       if (field.type === "Choice") {
-        const options = (field.choices ?? []).map((choice) => `<option>${choice}</option>`).join("");
+        const options = (field.choices ?? [])
+          .map((choice) => `<option>${choice}</option>`)
+          .join("");
         return `
           <div>
             <label for="${fieldId}">${field.name}</label>
             <select id="${fieldId}" data-field="${field.name}">
               <option value="">Select ${field.name}</option>
-              ${options}
+              ${options || ""}
             </select>
           </div>
         `;
