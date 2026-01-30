@@ -303,6 +303,17 @@
       margin-bottom: 12px;
     }
 
+    .table-config-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .table-config-status {
+      font-size: 12px;
+      color: #16a34a;
+    }
+
     .table-config form {
       display: grid;
       gap: 12px;
@@ -564,6 +575,10 @@
           <section class="table-config" id="tableConfig" hidden>
             <div class="table-config-header">
               <h4 id="tableConfigTitle">Table Configuration</h4>
+              <div class="table-config-actions">
+                <button type="button" class="primary" id="updateTableConfig">Update</button>
+                <span class="table-config-status" id="tableConfigStatus" aria-live="polite"></span>
+              </div>
             </div>
             <form id="tableNameForm">
               <div>
@@ -636,6 +651,8 @@
     const tableNameButtons = document.querySelectorAll(".table-name");
     const tableConfig = document.getElementById("tableConfig");
     const tableConfigTitle = document.getElementById("tableConfigTitle");
+    const updateTableConfigButton = document.getElementById("updateTableConfig");
+    const tableConfigStatus = document.getElementById("tableConfigStatus");
     const tableNameInput = document.getElementById("tableNameInput");
     const fieldForm = document.getElementById("fieldForm");
     const fieldNameInput = document.getElementById("fieldNameInput");
@@ -710,7 +727,8 @@
       checkbox.addEventListener("change", updateTableActions);
     });
 
-    const tablesData = {
+    const STORAGE_KEY = "incform_tables_db";
+    const defaultTablesData = {
       membership: {
         name: "Membership Categories",
         fields: [
@@ -733,6 +751,19 @@
         ],
       },
     };
+
+    const loadTablesData = () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return structuredClone(defaultTablesData);
+      try {
+        return JSON.parse(saved);
+      } catch (error) {
+        console.warn("Failed to parse saved table data, reverting to defaults.", error);
+        return structuredClone(defaultTablesData);
+      }
+    };
+
+    const tablesData = loadTablesData();
 
     let currentTableKey = null;
 
@@ -772,6 +803,7 @@
       tableConfig.hidden = false;
       tableConfigTitle.textContent = `${tableData.name} Configuration`;
       tableNameInput.value = tableData.name;
+      tableConfigStatus.textContent = "";
       renderFieldList();
     };
 
@@ -780,6 +812,13 @@
         openTableConfig(button.dataset.table);
       });
     });
+
+    const saveTablesData = () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tablesData));
+      if (tableConfigStatus) {
+        tableConfigStatus.textContent = "Saved to database.";
+      }
+    };
 
     tableNameInput.addEventListener("input", (event) => {
       if (!currentTableKey) return;
@@ -790,6 +829,7 @@
       if (tableButton) {
         tableButton.textContent = tablesData[currentTableKey].name;
       }
+      saveTablesData();
     });
 
     fieldForm.addEventListener("submit", (event) => {
@@ -802,6 +842,7 @@
       fieldNameInput.value = "";
       fieldTypeSelect.value = "";
       renderFieldList();
+      saveTablesData();
     });
 
     deleteFieldButton.addEventListener("click", () => {
@@ -813,6 +854,7 @@
         (_, index) => !selections.includes(index),
       );
       renderFieldList();
+      saveTablesData();
     });
 
     cloneFieldButton.addEventListener("click", () => {
@@ -826,7 +868,24 @@
       });
       tablesData[currentTableKey].fields.push(...clones);
       renderFieldList();
+      saveTablesData();
     });
+
+    const syncTableList = () => {
+      tableNameButtons.forEach((button) => {
+        const key = button.dataset.table;
+        if (tablesData[key]?.name) {
+          button.textContent = tablesData[key].name;
+        }
+      });
+    };
+
+    updateTableConfigButton.addEventListener("click", () => {
+      if (!currentTableKey) return;
+      saveTablesData();
+    });
+
+    syncTableList();
 
   </script>
 </body>
