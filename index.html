@@ -274,37 +274,20 @@
       text-decoration: underline;
     }
 
+    .tables-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 24px;
+      margin-top: 16px;
+      align-items: start;
+    }
+
     .table-config {
-      margin-top: 24px;
       padding: 20px;
       border-radius: 12px;
       border: 1px solid var(--border);
       background: #ffffff;
-    }
-
-    .table-config.modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: min(720px, 92%);
-      max-height: 80vh;
-      overflow-y: auto;
-      z-index: 20;
-      box-shadow: 0 24px 40px rgba(15, 23, 42, 0.25);
-      margin-top: 0;
-    }
-
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.55);
-      display: none;
-      z-index: 15;
-    }
-
-    .modal-backdrop.active {
-      display: block;
+      min-height: 200px;
     }
 
     .table-config h4 {
@@ -318,21 +301,6 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 12px;
-    }
-
-    .modal-close {
-      border: 1px solid var(--border);
-      background: #f8fafc;
-      padding: 6px 12px;
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      color: #334155;
-    }
-
-    .table-config:not(.modal) .modal-close {
-      display: none;
     }
 
     .table-config form {
@@ -434,6 +402,10 @@
 
       .nav {
         overflow-x: auto;
+      }
+
+      .tables-layout {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -551,88 +523,90 @@
       <section class="panel" id="tables" data-panel hidden>
         <h3 class="section-title">Table Management</h3>
         <p class="section-subtitle">Manage lookup tables and data definitions.</p>
-        <div class="table-actions">
-          <button type="button" class="primary">New</button>
-          <button type="button" class="secondary" id="deleteTable" disabled>Delete</button>
-          <button type="button" class="ghost" id="cloneTable" disabled>Clone</button>
-        </div>
-        <div class="table-list">
-          <table>
-            <thead>
-              <tr>
-                <th>Select</th>
-                <th>Name</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><input type="checkbox" class="table-select" /></td>
-                <td><button type="button" class="table-name" data-table="membership">Membership Categories</button></td>
-              </tr>
-              <tr>
-                <td><input type="checkbox" class="table-select" /></td>
-                <td><button type="button" class="table-name" data-table="locale">Locale Directory</button></td>
-              </tr>
-              <tr>
-                <td><input type="checkbox" class="table-select" /></td>
-                <td><button type="button" class="table-name" data-table="forms">Form Templates</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="content-area" id="tablesContent">
-          <strong>View Tables selected.</strong>
-          <ul>
-            <li>Search, filter, and manage lookup tables for the system.</li>
-          </ul>
-        </div>
-        <div id="tableConfigAnchor"></div>
-        <section class="table-config" id="tableConfig" hidden>
-          <div class="table-config-header">
-            <h4 id="tableConfigTitle">Table Configuration</h4>
-            <button type="button" class="modal-close" id="closeTableConfig">Close</button>
-          </div>
-          <form id="tableNameForm">
-            <div>
-              <label for="tableNameInput">Edit table name</label>
-              <input type="text" id="tableNameInput" placeholder="Table name" />
+        <div class="tables-layout">
+          <div>
+            <div class="table-actions">
+              <button type="button" class="primary">New</button>
+              <button type="button" class="secondary" id="deleteTable" disabled>Delete</button>
+              <button type="button" class="ghost" id="cloneTable" disabled>Clone</button>
             </div>
-          </form>
-          <form id="fieldForm">
-            <div>
-              <label for="fieldNameInput">Field Name</label>
-              <input type="text" id="fieldNameInput" placeholder="Enter field name" required />
+            <div class="table-list">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Select</th>
+                    <th>Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><input type="checkbox" class="table-select" /></td>
+                    <td><button type="button" class="table-name" data-table="membership">Membership Categories</button></td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" class="table-select" /></td>
+                    <td><button type="button" class="table-name" data-table="locale">Locale Directory</button></td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" class="table-select" /></td>
+                    <td><button type="button" class="table-name" data-table="forms">Form Templates</button></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div>
-              <label for="fieldTypeSelect">Type</label>
-              <select id="fieldTypeSelect" required>
-                <option value="">Select type</option>
-                <option value="String">String</option>
-                <option value="Date">Date</option>
-                <option value="Image">Image</option>
-                <option value="Checkbox">Checkbox</option>
-                <option value="Number">Number</option>
-              </select>
+            <div class="content-area" id="tablesContent">
+              <strong>View Tables selected.</strong>
+              <ul>
+                <li>Search, filter, and manage lookup tables for the system.</li>
+              </ul>
             </div>
-            <button type="submit" class="primary">Add Field</button>
-          </form>
-          <div class="field-actions">
-            <button type="button" id="deleteField" disabled>Delete</button>
-            <button type="button" id="cloneField" disabled>Clone</button>
           </div>
-          <div class="field-list">
-            <table>
-              <thead>
-                <tr>
-                  <th>Select</th>
-                  <th>Field Name</th>
-                  <th>Type</th>
-                </tr>
-              </thead>
-              <tbody id="fieldListBody"></tbody>
-            </table>
-          </div>
-        </section>
+          <section class="table-config" id="tableConfig" hidden>
+            <div class="table-config-header">
+              <h4 id="tableConfigTitle">Table Configuration</h4>
+            </div>
+            <form id="tableNameForm">
+              <div>
+                <label for="tableNameInput">Edit table name</label>
+                <input type="text" id="tableNameInput" placeholder="Table name" />
+              </div>
+            </form>
+            <form id="fieldForm">
+              <div>
+                <label for="fieldNameInput">Field Name</label>
+                <input type="text" id="fieldNameInput" placeholder="Enter field name" required />
+              </div>
+              <div>
+                <label for="fieldTypeSelect">Type</label>
+                <select id="fieldTypeSelect" required>
+                  <option value="">Select type</option>
+                  <option value="String">String</option>
+                  <option value="Date">Date</option>
+                  <option value="Image">Image</option>
+                  <option value="Checkbox">Checkbox</option>
+                  <option value="Number">Number</option>
+                </select>
+              </div>
+              <button type="submit" class="primary">Add Field</button>
+            </form>
+            <div class="field-actions">
+              <button type="button" id="deleteField" disabled>Delete</button>
+              <button type="button" id="cloneField" disabled>Clone</button>
+            </div>
+            <div class="field-list">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Select</th>
+                    <th>Field Name</th>
+                    <th>Type</th>
+                  </tr>
+                </thead>
+                <tbody id="fieldListBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
       </section>
 
       <section class="panel" id="access" data-panel hidden>
@@ -647,8 +621,6 @@
       </section>
     </main>
   </div>
-
-  <div class="modal-backdrop" id="modalBackdrop"></div>
 
   <script>
     const loginScreen = document.getElementById("loginScreen");
@@ -665,9 +637,6 @@
     const tableConfig = document.getElementById("tableConfig");
     const tableConfigTitle = document.getElementById("tableConfigTitle");
     const tableNameInput = document.getElementById("tableNameInput");
-    const closeTableConfig = document.getElementById("closeTableConfig");
-    const modalBackdrop = document.getElementById("modalBackdrop");
-    const tableConfigAnchor = document.getElementById("tableConfigAnchor");
     const fieldForm = document.getElementById("fieldForm");
     const fieldNameInput = document.getElementById("fieldNameInput");
     const fieldTypeSelect = document.getElementById("fieldTypeSelect");
@@ -802,17 +771,6 @@
       if (!tableData) return;
       tableConfig.hidden = false;
       tableConfigTitle.textContent = `${tableData.name} Configuration`;
-      if (tableKey === "forms") {
-        tableConfig.classList.add("modal");
-        modalBackdrop.classList.add("active");
-        document.body.appendChild(tableConfig);
-      } else {
-        tableConfig.classList.remove("modal");
-        modalBackdrop.classList.remove("active");
-        if (tableConfigAnchor) {
-          tableConfigAnchor.after(tableConfig);
-        }
-      }
       tableNameInput.value = tableData.name;
       renderFieldList();
     };
@@ -870,19 +828,6 @@
       renderFieldList();
     });
 
-    const closeConfigModal = () => {
-      if (tableConfig.classList.contains("modal")) {
-        tableConfig.hidden = true;
-        tableConfig.classList.remove("modal");
-        modalBackdrop.classList.remove("active");
-        if (tableConfigAnchor) {
-          tableConfigAnchor.after(tableConfig);
-        }
-      }
-    };
-
-    closeTableConfig.addEventListener("click", closeConfigModal);
-    modalBackdrop.addEventListener("click", closeConfigModal);
   </script>
 </body>
 </html>
