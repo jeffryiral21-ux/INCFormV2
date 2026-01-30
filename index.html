@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INC Data Management System</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6fb;
+      --panel: #ffffff;
+      --primary: #1c3faa;
+      --primary-dark: #142f7c;
+      --muted: #6b7280;
+      --border: #e2e8f0;
+      --accent: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: #111827;
+    }
+
+    .login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1c3faa 0%, #4267d1 50%, #6fa4ff 100%);
+      padding: 24px;
+    }
+
+    .login-card {
+      width: min(420px, 100%);
+      background: var(--panel);
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 24px 40px rgba(15, 23, 42, 0.2);
+    }
+
+    .login-card h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .login-card p {
+      margin: 0 0 24px;
+      color: var(--muted);
+    }
+
+    .login-card label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    .login-card input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .login-card button {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .login-card button:hover {
+      background: var(--primary-dark);
+    }
+
+    .app {
+      display: none;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 12px;
+      padding: 12px 32px;
+      background: #0f172a;
+    }
+
+    .nav button {
+      background: transparent;
+      border: none;
+      color: #cbd5f5;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .nav button.active {
+      background: #1e40af;
+      color: #fff;
+    }
+
+    main {
+      padding: 24px 32px 48px;
+    }
+
+    .panel {
+      background: var(--panel);
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    .section-title {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .section-subtitle {
+      margin: 0 0 20px;
+      color: var(--muted);
+    }
+
+    .submenu {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .submenu button {
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      cursor: pointer;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .submenu button.active {
+      border-color: var(--primary);
+      background: #e0e7ff;
+      color: var(--primary);
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .table-actions button {
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .table-actions button.secondary {
+      background: #f97316;
+    }
+
+    .table-actions button.ghost {
+      background: #334155;
+    }
+
+    .content-area {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      background: #f8fafc;
+      color: var(--muted);
+    }
+
+    .content-area strong {
+      color: #0f172a;
+    }
+
+    .content-area ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: #475569;
+    }
+
+    .signout {
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      color: #1f2937;
+    }
+
+    @media (max-width: 900px) {
+      header,
+      .nav,
+      main {
+        padding-inline: 16px;
+      }
+
+      .nav {
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <h1>INC Data Management</h1>
+      <p>Sign in to access the stand-alone data management system.</p>
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="Enter username" />
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter password" />
+      <button type="button" id="loginButton">Log in</button>
+    </div>
+  </div>
+
+  <div class="app" id="app">
+    <header>
+      <h2>Stand-Alone Data Management System</h2>
+      <button class="signout" id="signOut">Sign out</button>
+    </header>
+
+    <nav class="nav" id="mainNav">
+      <button type="button" data-tab="home" class="active">Home</button>
+      <button type="button" data-tab="forms">Forms</button>
+      <button type="button" data-tab="reports">Reports</button>
+      <button type="button" data-tab="records">Record Management</button>
+      <button type="button" data-tab="tables">Table Management</button>
+      <button type="button" data-tab="access">Access Management</button>
+    </nav>
+
+    <main>
+      <section class="panel" id="home" data-panel>
+        <h3 class="section-title">Welcome Home</h3>
+        <p class="section-subtitle">Select a module from the navigation bar to begin.</p>
+        <div class="content-area">
+          <strong>System Overview</strong>
+          <ul>
+            <li>Recent activity, alerts, and approvals will appear here.</li>
+            <li>Quick access shortcuts will be added to the top row.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel" id="forms" data-panel hidden>
+        <h3 class="section-title">Forms Module</h3>
+        <p class="section-subtitle">Select the form set you want to manage.</p>
+        <div class="submenu" data-submenu="forms">
+          <button type="button" class="active">R5-04</button>
+          <button type="button">R5-15</button>
+          <button type="button">R5-18</button>
+          <button type="button">Deliberasyon</button>
+          <button type="button">Oathtaking</button>
+          <button type="button">Seminar</button>
+        </div>
+        <div class="content-area" id="formsContent">
+          <strong>R5-04 selected.</strong>
+          <ul>
+            <li>Capture new submissions, attachments, and approvals for this form.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel" id="reports" data-panel hidden>
+        <h3 class="section-title">Reports Module</h3>
+        <p class="section-subtitle">Access report generation and exports.</p>
+        <div class="submenu" data-submenu="reports">
+          <button type="button" class="active">R5-03</button>
+          <button type="button">R5-14</button>
+          <button type="button">Master List</button>
+        </div>
+        <div class="content-area" id="reportsContent">
+          <strong>R5-03 selected.</strong>
+          <ul>
+            <li>Preview summarized outputs and export to PDF/CSV.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel" id="records" data-panel hidden>
+        <h3 class="section-title">Record Management</h3>
+        <p class="section-subtitle">Manage member records and control sequences.</p>
+        <div class="submenu" data-submenu="records">
+          <button type="button" class="active">New Member Record</button>
+          <button type="button">Modify Member Record</button>
+          <button type="button">Find Missing Control Sequence</button>
+          <button type="button">Override Control Number Assignment</button>
+          <button type="button">Find Duplicate Control Number Assignment</button>
+          <button type="button">Signatories</button>
+        </div>
+        <div class="content-area" id="recordsContent">
+          <strong>New Member Record selected.</strong>
+          <ul>
+            <li>Start a new profile and assign a control number.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel" id="tables" data-panel hidden>
+        <h3 class="section-title">Table Management</h3>
+        <p class="section-subtitle">Manage lookup tables and data definitions.</p>
+        <div class="submenu" data-submenu="tables">
+          <button type="button" class="active">View Tables</button>
+        </div>
+        <div class="table-actions">
+          <button type="button">New</button>
+          <button type="button" class="secondary">Delete</button>
+          <button type="button" class="ghost">Clone</button>
+        </div>
+        <div class="content-area" id="tablesContent">
+          <strong>View Tables selected.</strong>
+          <ul>
+            <li>Search, filter, and manage lookup tables for the system.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel" id="access" data-panel hidden>
+        <h3 class="section-title">Access Management</h3>
+        <p class="section-subtitle">Assign access levels, roles, and permissions.</p>
+        <div class="content-area">
+          <strong>Access configuration is pending.</strong>
+          <ul>
+            <li>Define roles, permissions, and approval chains here.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const loginScreen = document.getElementById("loginScreen");
+    const app = document.getElementById("app");
+    const loginButton = document.getElementById("loginButton");
+    const signOutButton = document.getElementById("signOut");
+    const navButtons = document.querySelectorAll("#mainNav button");
+    const panels = document.querySelectorAll("[data-panel]");
+    const submenuGroups = document.querySelectorAll("[data-submenu]");
+    const contentMap = {
+      forms: document.getElementById("formsContent"),
+      reports: document.getElementById("reportsContent"),
+      records: document.getElementById("recordsContent"),
+      tables: document.getElementById("tablesContent"),
+    };
+
+    const showApp = () => {
+      loginScreen.style.display = "none";
+      app.style.display = "block";
+    };
+
+    const showLogin = () => {
+      app.style.display = "none";
+      loginScreen.style.display = "flex";
+    };
+
+    loginButton.addEventListener("click", showApp);
+    signOutButton.addEventListener("click", showLogin);
+
+    navButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        navButtons.forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
+
+        panels.forEach((panel) => {
+          panel.hidden = panel.id !== button.dataset.tab;
+        });
+      });
+    });
+
+    submenuGroups.forEach((submenu) => {
+      submenu.addEventListener("click", (event) => {
+        const target = event.target.closest("button");
+        if (!target) return;
+
+        submenu.querySelectorAll("button").forEach((btn) => {
+          btn.classList.toggle("active", btn === target);
+        });
+
+        const contentArea = contentMap[submenu.dataset.submenu];
+        if (!contentArea) return;
+
+        contentArea.innerHTML = `
+          <strong>${target.textContent} selected.</strong>
+          <ul>
+            <li>Continue workflow actions for ${target.textContent} in this space.</li>
+          </ul>
+        `;
+      });
+    });
+  </script>
+</body>
+</html>
