@@ -282,10 +282,56 @@
       background: #ffffff;
     }
 
+    .table-config.modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(720px, 92%);
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 20;
+      box-shadow: 0 24px 40px rgba(15, 23, 42, 0.25);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      z-index: 15;
+    }
+
+    .modal-backdrop.active {
+      display: block;
+    }
+
     .table-config h4 {
       margin: 0 0 12px;
       font-size: 16px;
       color: #0f172a;
+    }
+
+    .table-config-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .modal-close {
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .table-config:not(.modal) .modal-close {
+      display: none;
     }
 
     .table-config form {
@@ -540,7 +586,10 @@
           </ul>
         </div>
         <section class="table-config" id="tableConfig" hidden>
-          <h4 id="tableConfigTitle">Table Configuration</h4>
+          <div class="table-config-header">
+            <h4 id="tableConfigTitle">Table Configuration</h4>
+            <button type="button" class="modal-close" id="closeTableConfig">Close</button>
+          </div>
           <form id="tableNameForm">
             <div>
               <label for="tableNameInput">Edit table name</label>
@@ -597,6 +646,8 @@
     </main>
   </div>
 
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+
   <script>
     const loginScreen = document.getElementById("loginScreen");
     const app = document.getElementById("app");
@@ -612,6 +663,8 @@
     const tableConfig = document.getElementById("tableConfig");
     const tableConfigTitle = document.getElementById("tableConfigTitle");
     const tableNameInput = document.getElementById("tableNameInput");
+    const closeTableConfig = document.getElementById("closeTableConfig");
+    const modalBackdrop = document.getElementById("modalBackdrop");
     const fieldForm = document.getElementById("fieldForm");
     const fieldNameInput = document.getElementById("fieldNameInput");
     const fieldTypeSelect = document.getElementById("fieldTypeSelect");
@@ -746,6 +799,13 @@
       if (!tableData) return;
       tableConfig.hidden = false;
       tableConfigTitle.textContent = `${tableData.name} Configuration`;
+      if (tableKey === "forms") {
+        tableConfig.classList.add("modal");
+        modalBackdrop.classList.add("active");
+      } else {
+        tableConfig.classList.remove("modal");
+        modalBackdrop.classList.remove("active");
+      }
       tableNameInput.value = tableData.name;
       renderFieldList();
     };
@@ -802,6 +862,17 @@
       tablesData[currentTableKey].fields.push(...clones);
       renderFieldList();
     });
+
+    const closeConfigModal = () => {
+      if (tableConfig.classList.contains("modal")) {
+        tableConfig.hidden = true;
+        tableConfig.classList.remove("modal");
+        modalBackdrop.classList.remove("active");
+      }
+    };
+
+    closeTableConfig.addEventListener("click", closeConfigModal);
+    modalBackdrop.addEventListener("click", closeConfigModal);
   </script>
 </body>
 </html>
