@@ -261,6 +261,95 @@
       border-bottom: none;
     }
 
+    .table-name {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .table-name:hover {
+      text-decoration: underline;
+    }
+
+    .table-config {
+      margin-top: 24px;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+    }
+
+    .table-config h4 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: #0f172a;
+    }
+
+    .table-config form {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .table-config label {
+      font-size: 13px;
+      color: #475569;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .table-config input,
+    .table-config select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .field-actions {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0 12px;
+    }
+
+    .field-actions button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      background: #334155;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .field-actions button:disabled {
+      background: #cbd5f5;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    .field-list table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .field-list th,
+    .field-list td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .field-list th {
+      background: #f8fafc;
+      color: #475569;
+    }
+
     .content-area {
       margin-top: 20px;
       padding: 20px;
@@ -431,15 +520,15 @@
             <tbody>
               <tr>
                 <td><input type="checkbox" class="table-select" /></td>
-                <td>Membership Categories</td>
+                <td><button type="button" class="table-name" data-table="membership">Membership Categories</button></td>
               </tr>
               <tr>
                 <td><input type="checkbox" class="table-select" /></td>
-                <td>Locale Directory</td>
+                <td><button type="button" class="table-name" data-table="locale">Locale Directory</button></td>
               </tr>
               <tr>
                 <td><input type="checkbox" class="table-select" /></td>
-                <td>Form Templates</td>
+                <td><button type="button" class="table-name" data-table="forms">Form Templates</button></td>
               </tr>
             </tbody>
           </table>
@@ -450,6 +539,49 @@
             <li>Search, filter, and manage lookup tables for the system.</li>
           </ul>
         </div>
+        <section class="table-config" id="tableConfig" hidden>
+          <h4 id="tableConfigTitle">Table Configuration</h4>
+          <form id="tableNameForm">
+            <div>
+              <label for="tableNameInput">Edit table name</label>
+              <input type="text" id="tableNameInput" placeholder="Table name" />
+            </div>
+          </form>
+          <form id="fieldForm">
+            <div>
+              <label for="fieldNameInput">Field Name</label>
+              <input type="text" id="fieldNameInput" placeholder="Enter field name" required />
+            </div>
+            <div>
+              <label for="fieldTypeSelect">Type</label>
+              <select id="fieldTypeSelect" required>
+                <option value="">Select type</option>
+                <option value="String">String</option>
+                <option value="Date">Date</option>
+                <option value="Image">Image</option>
+                <option value="Checkbox">Checkbox</option>
+                <option value="Number">Number</option>
+              </select>
+            </div>
+            <button type="submit" class="primary">Add Field</button>
+          </form>
+          <div class="field-actions">
+            <button type="button" id="deleteField" disabled>Delete</button>
+            <button type="button" id="cloneField" disabled>Clone</button>
+          </div>
+          <div class="field-list">
+            <table>
+              <thead>
+                <tr>
+                  <th>Select</th>
+                  <th>Field Name</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody id="fieldListBody"></tbody>
+            </table>
+          </div>
+        </section>
       </section>
 
       <section class="panel" id="access" data-panel hidden>
@@ -476,6 +608,16 @@
     const tableSelects = document.querySelectorAll(".table-select");
     const deleteButton = document.getElementById("deleteTable");
     const cloneButton = document.getElementById("cloneTable");
+    const tableNameButtons = document.querySelectorAll(".table-name");
+    const tableConfig = document.getElementById("tableConfig");
+    const tableConfigTitle = document.getElementById("tableConfigTitle");
+    const tableNameInput = document.getElementById("tableNameInput");
+    const fieldForm = document.getElementById("fieldForm");
+    const fieldNameInput = document.getElementById("fieldNameInput");
+    const fieldTypeSelect = document.getElementById("fieldTypeSelect");
+    const fieldListBody = document.getElementById("fieldListBody");
+    const deleteFieldButton = document.getElementById("deleteField");
+    const cloneFieldButton = document.getElementById("cloneField");
     const contentMap = {
       forms: document.getElementById("formsContent"),
       reports: document.getElementById("reportsContent"),
@@ -541,6 +683,124 @@
 
     tableSelects.forEach((checkbox) => {
       checkbox.addEventListener("change", updateTableActions);
+    });
+
+    const tablesData = {
+      membership: {
+        name: "Membership Categories",
+        fields: [
+          { name: "Category Name", type: "String" },
+          { name: "Active", type: "Checkbox" },
+        ],
+      },
+      locale: {
+        name: "Locale Directory",
+        fields: [
+          { name: "Locale Name", type: "String" },
+          { name: "Established Date", type: "Date" },
+        ],
+      },
+      forms: {
+        name: "Form Templates",
+        fields: [
+          { name: "Template Name", type: "String" },
+          { name: "Revision", type: "Number" },
+        ],
+      },
+    };
+
+    let currentTableKey = null;
+
+    const renderFieldList = () => {
+      if (!currentTableKey) return;
+      const fields = tablesData[currentTableKey].fields;
+      fieldListBody.innerHTML = fields
+        .map(
+          (field, index) => `
+            <tr>
+              <td><input type="checkbox" class="field-select" data-index="${index}" /></td>
+              <td>${field.name}</td>
+              <td>${field.type}</td>
+            </tr>
+          `,
+        )
+        .join("");
+
+      updateFieldActions();
+      fieldListBody.querySelectorAll(".field-select").forEach((checkbox) => {
+        checkbox.addEventListener("change", updateFieldActions);
+      });
+    };
+
+    const updateFieldActions = () => {
+      const isSelected = Array.from(fieldListBody.querySelectorAll(".field-select")).some(
+        (checkbox) => checkbox.checked,
+      );
+      deleteFieldButton.disabled = !isSelected;
+      cloneFieldButton.disabled = !isSelected;
+    };
+
+    const openTableConfig = (tableKey) => {
+      currentTableKey = tableKey;
+      const tableData = tablesData[tableKey];
+      if (!tableData) return;
+      tableConfig.hidden = false;
+      tableConfigTitle.textContent = `${tableData.name} Configuration`;
+      tableNameInput.value = tableData.name;
+      renderFieldList();
+    };
+
+    tableNameButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        openTableConfig(button.dataset.table);
+      });
+    });
+
+    tableNameInput.addEventListener("input", (event) => {
+      if (!currentTableKey) return;
+      const newName = event.target.value.trim();
+      tablesData[currentTableKey].name = newName || "Untitled Table";
+      tableConfigTitle.textContent = `${tablesData[currentTableKey].name} Configuration`;
+      const tableButton = document.querySelector(`.table-name[data-table="${currentTableKey}"]`);
+      if (tableButton) {
+        tableButton.textContent = tablesData[currentTableKey].name;
+      }
+    });
+
+    fieldForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!currentTableKey) return;
+      const fieldName = fieldNameInput.value.trim();
+      const fieldType = fieldTypeSelect.value;
+      if (!fieldName || !fieldType) return;
+      tablesData[currentTableKey].fields.push({ name: fieldName, type: fieldType });
+      fieldNameInput.value = "";
+      fieldTypeSelect.value = "";
+      renderFieldList();
+    });
+
+    deleteFieldButton.addEventListener("click", () => {
+      if (!currentTableKey) return;
+      const selections = Array.from(fieldListBody.querySelectorAll(".field-select"))
+        .filter((checkbox) => checkbox.checked)
+        .map((checkbox) => Number(checkbox.dataset.index));
+      tablesData[currentTableKey].fields = tablesData[currentTableKey].fields.filter(
+        (_, index) => !selections.includes(index),
+      );
+      renderFieldList();
+    });
+
+    cloneFieldButton.addEventListener("click", () => {
+      if (!currentTableKey) return;
+      const selections = Array.from(fieldListBody.querySelectorAll(".field-select"))
+        .filter((checkbox) => checkbox.checked)
+        .map((checkbox) => Number(checkbox.dataset.index));
+      const clones = selections.map((index) => {
+        const field = tablesData[currentTableKey].fields[index];
+        return { name: `${field.name} Copy`, type: field.type };
+      });
+      tablesData[currentTableKey].fields.push(...clones);
+      renderFieldList();
     });
   </script>
 </body>
