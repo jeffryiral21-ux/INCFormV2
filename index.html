@@ -398,6 +398,16 @@
       font-size: 14px;
     }
 
+    .field-list input,
+    .field-list select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      background: #fff;
+    }
+
     .field-list th {
       background: #f8fafc;
       color: #475569;
@@ -813,8 +823,24 @@
           (field, index) => `
             <tr>
               <td><input type="checkbox" class="field-select" data-index="${index}" /></td>
-              <td>${field.name}</td>
-              <td>${field.type}</td>
+              <td>
+                <input
+                  type="text"
+                  class="field-name-input"
+                  data-index="${index}"
+                  value="${field.name}"
+                />
+              </td>
+              <td>
+                <select class="field-type-select" data-index="${index}">
+                  <option value="String" ${field.type === "String" ? "selected" : ""}>String</option>
+                  <option value="Choice" ${field.type === "Choice" ? "selected" : ""}>Choice</option>
+                  <option value="Date" ${field.type === "Date" ? "selected" : ""}>Date</option>
+                  <option value="Image" ${field.type === "Image" ? "selected" : ""}>Image</option>
+                  <option value="Checkbox" ${field.type === "Checkbox" ? "selected" : ""}>Checkbox</option>
+                  <option value="Number" ${field.type === "Number" ? "selected" : ""}>Number</option>
+                </select>
+              </td>
             </tr>
           `,
         )
@@ -823,6 +849,22 @@
       updateFieldActions();
       fieldListBody.querySelectorAll(".field-select").forEach((checkbox) => {
         checkbox.addEventListener("change", updateFieldActions);
+      });
+      fieldListBody.querySelectorAll(".field-name-input").forEach((input) => {
+        input.addEventListener("input", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
+          tablesData[currentTableKey].fields[index].name = event.target.value.trim() || "Untitled";
+          saveTablesData();
+        });
+      });
+      fieldListBody.querySelectorAll(".field-type-select").forEach((select) => {
+        select.addEventListener("change", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
+          tablesData[currentTableKey].fields[index].type = event.target.value;
+          saveTablesData();
+        });
       });
     };
 
