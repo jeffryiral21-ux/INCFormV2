@@ -111,6 +111,10 @@
       background: #0f172a;
     }
 
+    .nav-item {
+      position: relative;
+    }
+
     .nav button {
       background: transparent;
       border: none;
@@ -125,6 +129,39 @@
     .nav button.active {
       background: #1e40af;
       color: #fff;
+    }
+
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 220px;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+      padding: 8px;
+      display: none;
+      z-index: 10;
+    }
+
+    .dropdown button {
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #0f172a;
+      background: transparent;
+    }
+
+    .dropdown button.active {
+      background: #e0e7ff;
+      color: var(--primary);
+    }
+
+    .nav-item:hover .dropdown,
+    .nav-item:focus-within .dropdown {
+      display: block;
     }
 
     main {
@@ -150,9 +187,7 @@
     }
 
     .submenu {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
+      display: none;
     }
 
     .submenu button {
@@ -163,12 +198,6 @@
       cursor: pointer;
       font-weight: 600;
       color: #1f2937;
-    }
-
-    .submenu button.active {
-      border-color: var(--primary);
-      background: #e0e7ff;
-      color: var(--primary);
     }
 
     .table-actions {
@@ -256,12 +285,48 @@
     </header>
 
     <nav class="nav" id="mainNav">
-      <button type="button" data-tab="home" class="active">Home</button>
-      <button type="button" data-tab="forms">Forms</button>
-      <button type="button" data-tab="reports">Reports</button>
-      <button type="button" data-tab="records">Record Management</button>
-      <button type="button" data-tab="tables">Table Management</button>
-      <button type="button" data-tab="access">Access Management</button>
+      <div class="nav-item">
+        <button type="button" data-tab="home" class="active">Home</button>
+      </div>
+      <div class="nav-item">
+        <button type="button" data-tab="forms">Forms</button>
+        <div class="dropdown" data-submenu="forms">
+          <button type="button" class="active">R5-04</button>
+          <button type="button">R5-15</button>
+          <button type="button">R5-18</button>
+          <button type="button">Deliberasyon</button>
+          <button type="button">Oathtaking</button>
+          <button type="button">Seminar</button>
+        </div>
+      </div>
+      <div class="nav-item">
+        <button type="button" data-tab="reports">Reports</button>
+        <div class="dropdown" data-submenu="reports">
+          <button type="button" class="active">R5-03</button>
+          <button type="button">R5-14</button>
+          <button type="button">Master List</button>
+        </div>
+      </div>
+      <div class="nav-item">
+        <button type="button" data-tab="records">Record Management</button>
+        <div class="dropdown" data-submenu="records">
+          <button type="button" class="active">New Member Record</button>
+          <button type="button">Modify Member Record</button>
+          <button type="button">Find Missing Control Sequence</button>
+          <button type="button">Override Control Number Assignment</button>
+          <button type="button">Find Duplicate Control Number Assignment</button>
+          <button type="button">Signatories</button>
+        </div>
+      </div>
+      <div class="nav-item">
+        <button type="button" data-tab="tables">Table Management</button>
+        <div class="dropdown" data-submenu="tables">
+          <button type="button" class="active">View Tables</button>
+        </div>
+      </div>
+      <div class="nav-item">
+        <button type="button" data-tab="access">Access Management</button>
+      </div>
     </nav>
 
     <main>
@@ -280,14 +345,6 @@
       <section class="panel" id="forms" data-panel hidden>
         <h3 class="section-title">Forms Module</h3>
         <p class="section-subtitle">Select the form set you want to manage.</p>
-        <div class="submenu" data-submenu="forms">
-          <button type="button" class="active">R5-04</button>
-          <button type="button">R5-15</button>
-          <button type="button">R5-18</button>
-          <button type="button">Deliberasyon</button>
-          <button type="button">Oathtaking</button>
-          <button type="button">Seminar</button>
-        </div>
         <div class="content-area" id="formsContent">
           <strong>R5-04 selected.</strong>
           <ul>
@@ -299,11 +356,6 @@
       <section class="panel" id="reports" data-panel hidden>
         <h3 class="section-title">Reports Module</h3>
         <p class="section-subtitle">Access report generation and exports.</p>
-        <div class="submenu" data-submenu="reports">
-          <button type="button" class="active">R5-03</button>
-          <button type="button">R5-14</button>
-          <button type="button">Master List</button>
-        </div>
         <div class="content-area" id="reportsContent">
           <strong>R5-03 selected.</strong>
           <ul>
@@ -315,14 +367,6 @@
       <section class="panel" id="records" data-panel hidden>
         <h3 class="section-title">Record Management</h3>
         <p class="section-subtitle">Manage member records and control sequences.</p>
-        <div class="submenu" data-submenu="records">
-          <button type="button" class="active">New Member Record</button>
-          <button type="button">Modify Member Record</button>
-          <button type="button">Find Missing Control Sequence</button>
-          <button type="button">Override Control Number Assignment</button>
-          <button type="button">Find Duplicate Control Number Assignment</button>
-          <button type="button">Signatories</button>
-        </div>
         <div class="content-area" id="recordsContent">
           <strong>New Member Record selected.</strong>
           <ul>
@@ -334,9 +378,6 @@
       <section class="panel" id="tables" data-panel hidden>
         <h3 class="section-title">Table Management</h3>
         <p class="section-subtitle">Manage lookup tables and data definitions.</p>
-        <div class="submenu" data-submenu="tables">
-          <button type="button" class="active">View Tables</button>
-        </div>
         <div class="table-actions">
           <button type="button">New</button>
           <button type="button" class="secondary">Delete</button>
@@ -370,7 +411,7 @@
     const signOutButton = document.getElementById("signOut");
     const navButtons = document.querySelectorAll("#mainNav button");
     const panels = document.querySelectorAll("[data-panel]");
-    const submenuGroups = document.querySelectorAll("[data-submenu]");
+    const submenuGroups = document.querySelectorAll(".dropdown[data-submenu]");
     const contentMap = {
       forms: document.getElementById("formsContent"),
       reports: document.getElementById("reportsContent"),
@@ -413,6 +454,11 @@
 
         const contentArea = contentMap[submenu.dataset.submenu];
         if (!contentArea) return;
+
+        const parentButton = submenu.parentElement?.querySelector("button[data-tab]");
+        if (parentButton) {
+          parentButton.click();
+        }
 
         contentArea.innerHTML = `
           <strong>${target.textContent} selected.</strong>
