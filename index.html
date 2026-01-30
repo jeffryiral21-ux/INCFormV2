@@ -967,12 +967,23 @@
     const renderMemberInfoList = (contentArea) => {
       tablesData = loadTablesData();
       memberInfoRecords = loadMemberInfoRecords();
-      const memberInfoKey = getTableKeyByName("Member Information");
+      const memberInfoKey =
+        getTableKeyByName("Member Information") || (tablesData.member_info ? "member_info" : null);
       const memberInfoTable = memberInfoKey ? tablesData[memberInfoKey] : null;
       const tableFields = memberInfoTable?.fields ?? [];
       const hasFields = tableFields.length > 0;
       contentArea.innerHTML = `
         <strong>Member Information selected.</strong>
+        <div class="content-area" style="margin-top: 16px;">
+          <strong>Source table:</strong>
+          ${memberInfoTable ? memberInfoTable.name : "Not found"}
+          <div style="margin-top: 8px;">
+            <span style="color:#64748b;">Fields:</span>
+            ${tableFields.length}
+            <span style="color:#64748b;margin-left:12px;">Last refresh:</span>
+            ${new Date().toLocaleTimeString()}
+          </div>
+        </div>
         <div class="table-actions rounded-actions" style="margin-top: 16px;">
           <button type="button" class="primary" id="newMemberInfo" ${
             memberInfoTable ? "" : "disabled"
