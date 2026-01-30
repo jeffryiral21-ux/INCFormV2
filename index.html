@@ -730,6 +730,11 @@
       records: document.getElementById("recordsContent"),
       tables: document.getElementById("tablesContent"),
     };
+    const memberInfoRecords = [
+      { id: "MI-001", name: "Juan Dela Cruz", locale: "Central", status: "Active" },
+      { id: "MI-002", name: "Maria Santos", locale: "North", status: "Inactive" },
+      { id: "MI-003", name: "Jose Reyes", locale: "South", status: "Active" },
+    ];
 
     const showApp = () => {
       loginScreen.style.display = "none";
@@ -772,6 +777,11 @@
           parentButton.click();
         }
 
+        if (submenu.dataset.submenu === "records" && target.textContent === "Member Information") {
+          renderMemberInfoList(contentArea);
+          return;
+        }
+
         contentArea.innerHTML = `
           <strong>${target.textContent} selected.</strong>
           <ul>
@@ -780,6 +790,38 @@
         `;
       });
     });
+
+    const renderMemberInfoList = (contentArea) => {
+      contentArea.innerHTML = `
+        <strong>Member Information selected.</strong>
+        <div class="table-list" style="margin-top: 12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Member ID</th>
+                <th>Name</th>
+                <th>Locale</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${memberInfoRecords
+                .map(
+                  (record) => `
+                    <tr>
+                      <td>${record.id}</td>
+                      <td>${record.name}</td>
+                      <td>${record.locale}</td>
+                      <td>${record.status}</td>
+                    </tr>
+                  `,
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    };
 
     const updateTableActions = () => {
       const selects = tableListBody.querySelectorAll(".table-select");
