@@ -216,6 +216,17 @@
       cursor: pointer;
     }
 
+    button.primary {
+      background: linear-gradient(135deg, #1c3faa, #355dd6);
+      box-shadow: 0 8px 16px rgba(28, 63, 170, 0.24);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button.primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(28, 63, 170, 0.32);
+    }
+
     .table-actions button:disabled {
       background: #cbd5f5;
       color: #64748b;
@@ -596,6 +607,7 @@
                 <select id="fieldTypeSelect" required>
                   <option value="">Select type</option>
                   <option value="String">String</option>
+                  <option value="Choice">Choice</option>
                   <option value="Date">Date</option>
                   <option value="Image">Image</option>
                   <option value="Checkbox">Checkbox</option>
