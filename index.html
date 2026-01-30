@@ -851,7 +851,8 @@
       records: document.getElementById("recordsContent"),
       tables: document.getElementById("tablesContent"),
     };
-    const memberInfoRecords = [
+    const MEMBER_INFO_STORAGE_KEY = "incform_member_info_records";
+    const defaultMemberInfoRecords = [
       {
         "Member ID": "MI-001",
         Name: "Juan Dela Cruz",
@@ -943,7 +944,24 @@
     const getTableByName = (tableName) =>
       Object.values(tablesData).find((table) => table.name === tableName);
 
+    const loadMemberInfoRecords = () => {
+      const saved = localStorage.getItem(MEMBER_INFO_STORAGE_KEY);
+      if (!saved) return structuredClone(defaultMemberInfoRecords);
+      try {
+        return JSON.parse(saved);
+      } catch (error) {
+        console.warn("Failed to parse saved member records, reverting to defaults.", error);
+        return structuredClone(defaultMemberInfoRecords);
+      }
+    };
+
+    const saveMemberInfoRecords = () => {
+      localStorage.setItem(MEMBER_INFO_STORAGE_KEY, JSON.stringify(memberInfoRecords));
+    };
+
     const renderMemberInfoList = (contentArea) => {
+      tablesData = loadTablesData();
+      memberInfoRecords = loadMemberInfoRecords();
       const memberInfoTable = getTableByName("Member Information");
       const tableFields = memberInfoTable?.fields ?? [];
       const hasFields = tableFields.length > 0;
@@ -969,7 +987,13 @@
                         (record) => `
                           <tr>
                             ${tableFields
-                              .map((field) => `<td>${record[field.name] ?? ""}</td>`)
+                              .map((field) => {
+                                const value = record[field.name] ?? "";
+                                if (field.type === "Image" && value) {
+                                  return `<td><img src="${value}" alt="${field.name}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #e2e8f0;" /></td>`;
+                                }
+                                return `<td>${value}</td>`;
+                              })
                               .join("")}
                           </tr>
                         `,
@@ -1066,7 +1090,8 @@
       }
     };
 
-    const tablesData = loadTablesData();
+    let tablesData = loadTablesData();
+    let memberInfoRecords = loadMemberInfoRecords();
 
     let currentTableKey = null;
     let draggedFieldIndex = null;
@@ -1340,6 +1365,7 @@
 
     const openMemberInfoModal = (tableName) => {
       if (!memberInfoModal || !memberInfoFormFields) return;
+      tablesData = loadTablesData();
       const memberInfoTable = getTableByName(tableName);
       const tableFields = memberInfoTable?.fields ?? [];
       memberInfoFormFields.innerHTML = tableFields
@@ -1385,6 +1411,7 @@
         const options = records
           .map((record) => `<option value="${record.id}">${record.name}</option>`)
           .join("");
+        const helperText = records.length === 0 ? "(No reference records available)" : "";
         return `
           <div>
             <label for="${fieldId}">${field.name}</label>
@@ -1392,6 +1419,7 @@
               <option value="">Select ${field.name}</option>
               ${options}
             </select>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">${helperText}</div>
           </div>
         `;
       }
@@ -1510,6 +1538,31 @@
 
     memberInfoForm.addEventListener("submit", (event) => {
       event.preventDefault();
+      const memberInfoTable = getTableByName("Member Information");
+      const tableFields = memberInfoTable?.fields ?? [];
+      const newRecord = {};
+      tableFields.forEach((field) => {
+        const fieldId = `member-${field.name.replace(/\s+/g, "-").toLowerCase()}`;
+        if (field.type === "Image") {
+          const cropper = memberInfoFormFields.querySelector(`[data-cropper="${fieldId}"]`);
+          const canvas = cropper?.querySelector("canvas");
+          if (canvas && cropperState?.image) {
+            newRecord[field.name] = canvas.toDataURL("image/png");
+          }
+          return;
+        }
+        const input = document.getElementById(fieldId);
+        if (!input) return;
+        if (field.type === "Reference") {
+          const selectedOption = input.selectedOptions?.[0];
+          newRecord[field.name] = selectedOption?.textContent ?? "";
+          return;
+        }
+        newRecord[field.name] = input.value ?? "";
+      });
+      memberInfoRecords.unshift(newRecord);
+      saveMemberInfoRecords();
+      renderMemberInfoList(contentMap.records);
       closeMemberInfoModalView();
     });
 
