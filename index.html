@@ -731,9 +731,24 @@
       tables: document.getElementById("tablesContent"),
     };
     const memberInfoRecords = [
-      { id: "MI-001", name: "Juan Dela Cruz", locale: "Central", status: "Active" },
-      { id: "MI-002", name: "Maria Santos", locale: "North", status: "Inactive" },
-      { id: "MI-003", name: "Jose Reyes", locale: "South", status: "Active" },
+      {
+        "Member ID": "MI-001",
+        Name: "Juan Dela Cruz",
+        Locale: "Central",
+        Status: "Active",
+      },
+      {
+        "Member ID": "MI-002",
+        Name: "Maria Santos",
+        Locale: "North",
+        Status: "Inactive",
+      },
+      {
+        "Member ID": "MI-003",
+        Name: "Jose Reyes",
+        Locale: "South",
+        Status: "Active",
+      },
     ];
 
     const showApp = () => {
@@ -794,7 +809,13 @@
       });
     });
 
+    const getTableByName = (tableName) =>
+      Object.values(tablesData).find((table) => table.name === tableName);
+
     const renderMemberInfoList = (contentArea) => {
+      const memberInfoTable = getTableByName("Member Information");
+      const tableFields = memberInfoTable?.fields ?? [];
+      const hasFields = tableFields.length > 0;
       contentArea.innerHTML = `
         <strong>Member Information selected.</strong>
         <div class="table-actions" style="margin-top: 16px;">
@@ -806,25 +827,25 @@
           <table>
             <thead>
               <tr>
-                <th>Member ID</th>
-                <th>Name</th>
-                <th>Locale</th>
-                <th>Status</th>
+                ${hasFields ? tableFields.map((field) => `<th>${field.name}</th>`).join("") : ""}
               </tr>
             </thead>
             <tbody>
-              ${memberInfoRecords
-                .map(
-                  (record) => `
-                    <tr>
-                      <td>${record.id}</td>
-                      <td>${record.name}</td>
-                      <td>${record.locale}</td>
-                      <td>${record.status}</td>
-                    </tr>
-                  `,
-                )
-                .join("")}
+              ${
+                hasFields
+                  ? memberInfoRecords
+                      .map(
+                        (record) => `
+                          <tr>
+                            ${tableFields
+                              .map((field) => `<td>${record[field.name] ?? ""}</td>`)
+                              .join("")}
+                          </tr>
+                        `,
+                      )
+                      .join("")
+                  : `<tr><td colspan="1">No fields defined for Member Information.</td></tr>`
+              }
             </tbody>
           </table>
         </div>
@@ -840,6 +861,15 @@
 
     const STORAGE_KEY = "incform_tables_db";
     const defaultTablesData = {
+      member_info: {
+        name: "Member Information",
+        fields: [
+          { name: "Member ID", type: "String" },
+          { name: "Name", type: "String" },
+          { name: "Locale", type: "String" },
+          { name: "Status", type: "String" },
+        ],
+      },
       membership: {
         name: "Membership Categories",
         fields: [
