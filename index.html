@@ -941,8 +941,13 @@
       });
     });
 
-    const getTableByName = (tableName) =>
-      Object.values(tablesData).find((table) => table.name === tableName);
+    const getTableKeyByName = (tableName) =>
+      Object.keys(tablesData).find((key) => tablesData[key]?.name === tableName);
+
+    const getTableByName = (tableName) => {
+      const key = getTableKeyByName(tableName);
+      return key ? tablesData[key] : null;
+    };
 
     const loadMemberInfoRecords = () => {
       const saved = localStorage.getItem(MEMBER_INFO_STORAGE_KEY);
@@ -962,52 +967,66 @@
     const renderMemberInfoList = (contentArea) => {
       tablesData = loadTablesData();
       memberInfoRecords = loadMemberInfoRecords();
-      const memberInfoTable = getTableByName("Member Information");
+      const memberInfoKey = getTableKeyByName("Member Information");
+      const memberInfoTable = memberInfoKey ? tablesData[memberInfoKey] : null;
       const tableFields = memberInfoTable?.fields ?? [];
       const hasFields = tableFields.length > 0;
       contentArea.innerHTML = `
         <strong>Member Information selected.</strong>
         <div class="table-actions rounded-actions" style="margin-top: 16px;">
-          <button type="button" class="primary" id="newMemberInfo">New</button>
-          <button type="button" class="secondary">Delete</button>
-          <button type="button" class="ghost">Edit</button>
+          <button type="button" class="primary" id="newMemberInfo" ${
+            memberInfoTable ? "" : "disabled"
+          }>New</button>
+          <button type="button" class="secondary" disabled>Delete</button>
+          <button type="button" class="ghost" disabled>Edit</button>
         </div>
-        <div class="table-list" style="margin-top: 12px;">
-          <table>
-            <thead>
-              <tr>
-                ${hasFields ? tableFields.map((field) => `<th>${field.name}</th>`).join("") : ""}
-              </tr>
-            </thead>
-            <tbody>
-              ${
-                hasFields
-                  ? memberInfoRecords
-                      .map(
-                        (record) => `
-                          <tr>
-                            ${tableFields
-                              .map((field) => {
-                                const value = record[field.name] ?? "";
-                                if (field.type === "Image" && value) {
-                                  return `<td><img src="${value}" alt="${field.name}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #e2e8f0;" /></td>`;
-                                }
-                                return `<td>${value}</td>`;
-                              })
-                              .join("")}
-                          </tr>
-                        `,
-                      )
-                      .join("")
-                  : `<tr><td colspan="1">No fields defined for Member Information.</td></tr>`
-              }
-            </tbody>
-          </table>
-        </div>
+        ${
+          memberInfoTable
+            ? `
+              <div class="table-list" style="margin-top: 12px;">
+                <table>
+                  <thead>
+                    <tr>
+                      ${hasFields ? tableFields.map((field) => `<th>${field.name}</th>`).join("") : ""}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${
+                      hasFields
+                        ? memberInfoRecords
+                            .map(
+                              (record) => `
+                                <tr>
+                                  ${tableFields
+                                    .map((field) => {
+                                      const value = record[field.name] ?? "";
+                                      if (field.type === "Image" && value) {
+                                        return `<td><img src="${value}" alt="${field.name}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #e2e8f0;" /></td>`;
+                                      }
+                                      return `<td>${value}</td>`;
+                                    })
+                                    .join("")}
+                                </tr>
+                              `,
+                            )
+                            .join("")
+                        : `<tr><td colspan="1">No fields defined for Member Information.</td></tr>`
+                    }
+                  </tbody>
+                </table>
+              </div>
+            `
+            : `<div class="content-area" style="margin-top: 16px;">
+                <strong>Member Information table not found.</strong>
+                <ul>
+                  <li>Please create a table named “Member Information” in Table Management.</li>
+                </ul>
+              </div>`
+        }
       `;
       const newButton = contentArea.querySelector("#newMemberInfo");
-      if (newButton) {
-        newButton.addEventListener("click", () => openMemberInfoModal("Member Information"));
+      if (newButton && memberInfoKey) {
+        newButton.addEventListener("click", () => openMemberInfoModal(memberInfoKey));
       }
     };
 
@@ -1363,10 +1382,10 @@
 
     let cropperState = null;
 
-    const openMemberInfoModal = (tableName) => {
+    const openMemberInfoModal = (tableKeyOrName) => {
       if (!memberInfoModal || !memberInfoFormFields) return;
       tablesData = loadTablesData();
-      const memberInfoTable = getTableByName(tableName);
+      const memberInfoTable = tablesData[tableKeyOrName] ?? getTableByName(tableKeyOrName);
       const tableFields = memberInfoTable?.fields ?? [];
       memberInfoFormFields.innerHTML = tableFields
         .map((field) => buildFieldInput(field))
