@@ -216,12 +216,49 @@
       cursor: pointer;
     }
 
+    .table-actions button:disabled {
+      background: #cbd5f5;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
     .table-actions button.secondary {
       background: #f97316;
     }
 
     .table-actions button.ghost {
       background: #334155;
+    }
+
+    .table-list {
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .table-list table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table-list th,
+    .table-list td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .table-list th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 600;
+    }
+
+    .table-list tbody tr:last-child td {
+      border-bottom: none;
     }
 
     .content-area {
@@ -379,9 +416,33 @@
         <h3 class="section-title">Table Management</h3>
         <p class="section-subtitle">Manage lookup tables and data definitions.</p>
         <div class="table-actions">
-          <button type="button">New</button>
-          <button type="button" class="secondary">Delete</button>
-          <button type="button" class="ghost">Clone</button>
+          <button type="button" class="primary">New</button>
+          <button type="button" class="secondary" id="deleteTable" disabled>Delete</button>
+          <button type="button" class="ghost" id="cloneTable" disabled>Clone</button>
+        </div>
+        <div class="table-list">
+          <table>
+            <thead>
+              <tr>
+                <th>Select</th>
+                <th>Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input type="checkbox" class="table-select" /></td>
+                <td>Membership Categories</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="table-select" /></td>
+                <td>Locale Directory</td>
+              </tr>
+              <tr>
+                <td><input type="checkbox" class="table-select" /></td>
+                <td>Form Templates</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
         <div class="content-area" id="tablesContent">
           <strong>View Tables selected.</strong>
@@ -412,6 +473,9 @@
     const navButtons = document.querySelectorAll("#mainNav button");
     const panels = document.querySelectorAll("[data-panel]");
     const submenuGroups = document.querySelectorAll(".dropdown[data-submenu]");
+    const tableSelects = document.querySelectorAll(".table-select");
+    const deleteButton = document.getElementById("deleteTable");
+    const cloneButton = document.getElementById("cloneTable");
     const contentMap = {
       forms: document.getElementById("formsContent"),
       reports: document.getElementById("reportsContent"),
@@ -467,6 +531,16 @@
           </ul>
         `;
       });
+    });
+
+    const updateTableActions = () => {
+      const isSelected = Array.from(tableSelects).some((checkbox) => checkbox.checked);
+      deleteButton.disabled = !isSelected;
+      cloneButton.disabled = !isSelected;
+    };
+
+    tableSelects.forEach((checkbox) => {
+      checkbox.addEventListener("change", updateTableActions);
     });
   </script>
 </body>
