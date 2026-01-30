@@ -249,6 +249,10 @@
       background: #334155;
     }
 
+    .rounded-actions button {
+      border-radius: 999px;
+    }
+
     .table-list {
       margin-top: 16px;
       border: 1px solid var(--border);
@@ -427,6 +431,102 @@
 
     .field-row.is-dragging {
       opacity: 0.6;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 24px;
+    }
+
+    .modal-backdrop.is-visible {
+      display: flex;
+    }
+
+    .modal {
+      width: min(900px, 100%);
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 50px rgba(15, 23, 42, 0.2);
+      padding: 24px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h4 {
+      margin: 0;
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .modal-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .modal-form label {
+      font-size: 13px;
+      color: #475569;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .modal-form input,
+    .modal-form select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .cropper {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+
+    .cropper canvas {
+      width: 200px;
+      height: 200px;
+      display: block;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      background: #fff;
+    }
+
+    .cropper-controls {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: #475569;
     }
 
     .content-area {
@@ -697,6 +797,22 @@
     </main>
   </div>
 
+  <div class="modal-backdrop" id="memberInfoModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memberInfoModalTitle">
+      <div class="modal-header">
+        <h4 id="memberInfoModalTitle">New Member Information</h4>
+        <button type="button" class="modal-close" id="closeMemberInfoModal" aria-label="Close">×</button>
+      </div>
+      <form id="memberInfoForm">
+        <div class="modal-form" id="memberInfoFormFields"></div>
+        <div class="modal-actions">
+          <button type="button" class="ghost" id="cancelMemberInfo">Cancel</button>
+          <button type="submit" class="primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const loginScreen = document.getElementById("loginScreen");
     const app = document.getElementById("app");
@@ -724,6 +840,11 @@
     const fieldListBody = document.getElementById("fieldListBody");
     const deleteFieldButton = document.getElementById("deleteField");
     const cloneFieldButton = document.getElementById("cloneField");
+    const memberInfoModal = document.getElementById("memberInfoModal");
+    const closeMemberInfoModal = document.getElementById("closeMemberInfoModal");
+    const cancelMemberInfo = document.getElementById("cancelMemberInfo");
+    const memberInfoForm = document.getElementById("memberInfoForm");
+    const memberInfoFormFields = document.getElementById("memberInfoFormFields");
     const contentMap = {
       forms: document.getElementById("formsContent"),
       reports: document.getElementById("reportsContent"),
@@ -750,6 +871,16 @@
         Status: "Active",
       },
     ];
+    const tableRecords = {
+      membership: [
+        { id: "CAT-001", name: "Choir" },
+        { id: "CAT-002", name: "Finance" },
+      ],
+      locale: [
+        { id: "LOC-001", name: "Central" },
+        { id: "LOC-002", name: "North" },
+      ],
+    };
 
     const showApp = () => {
       loginScreen.style.display = "none";
@@ -818,8 +949,8 @@
       const hasFields = tableFields.length > 0;
       contentArea.innerHTML = `
         <strong>Member Information selected.</strong>
-        <div class="table-actions" style="margin-top: 16px;">
-          <button type="button" class="primary">New</button>
+        <div class="table-actions rounded-actions" style="margin-top: 16px;">
+          <button type="button" class="primary" id="newMemberInfo">New</button>
           <button type="button" class="secondary">Delete</button>
           <button type="button" class="ghost">Edit</button>
         </div>
@@ -850,6 +981,10 @@
           </table>
         </div>
       `;
+      const newButton = contentArea.querySelector("#newMemberInfo");
+      if (newButton) {
+        newButton.addEventListener("click", () => openMemberInfoModal(tableFields));
+      }
     };
 
     const updateTableActions = () => {
@@ -867,7 +1002,8 @@
           { name: "Member ID", type: "String" },
           { name: "Name", type: "String" },
           { name: "Locale", type: "String" },
-          { name: "Status", type: "String" },
+          { name: "Status", type: "Choice", choices: ["Active", "Inactive"] },
+          { name: "Member Photo", type: "Image" },
         ],
       },
       membership: {
@@ -1173,6 +1309,179 @@
     });
 
     renderTableList();
+
+    let cropperState = null;
+
+    const openMemberInfoModal = (tableFields) => {
+      if (!memberInfoModal || !memberInfoFormFields) return;
+      memberInfoFormFields.innerHTML = tableFields
+        .map((field) => buildFieldInput(field))
+        .join("");
+      attachFieldBehaviors(tableFields);
+      memberInfoModal.classList.add("is-visible");
+    };
+
+    const closeMemberInfoModalView = () => {
+      memberInfoModal.classList.remove("is-visible");
+      memberInfoForm.reset();
+      memberInfoFormFields.innerHTML = "";
+      cropperState = null;
+    };
+
+    const buildFieldInput = (field) => {
+      const fieldId = `member-${field.name.replace(/\s+/g, "-").toLowerCase()}`;
+      if (field.type === "Choice") {
+        const options = (field.choices ?? []).map((choice) => `<option>${choice}</option>`).join("");
+        return `
+          <div>
+            <label for="${fieldId}">${field.name}</label>
+            <select id="${fieldId}" data-field="${field.name}">
+              <option value="">Select ${field.name}</option>
+              ${options}
+            </select>
+          </div>
+        `;
+      }
+      if (field.type === "Date") {
+        return `
+          <div>
+            <label for="${fieldId}">${field.name}</label>
+            <input type="date" id="${fieldId}" data-field="${field.name}" />
+          </div>
+        `;
+      }
+      if (field.type === "Reference") {
+        const records = tableRecords[field.referenceTable] ?? [];
+        const options = records
+          .map((record) => `<option value="${record.id}">${record.name}</option>`)
+          .join("");
+        return `
+          <div>
+            <label for="${fieldId}">${field.name}</label>
+            <select id="${fieldId}" data-field="${field.name}">
+              <option value="">Select ${field.name}</option>
+              ${options}
+            </select>
+          </div>
+        `;
+      }
+      if (field.type === "Image") {
+        return `
+          <div>
+            <label for="${fieldId}">${field.name}</label>
+            <input type="file" id="${fieldId}" accept="image/*" data-field="${field.name}" />
+            <div class="cropper" data-cropper="${fieldId}">
+              <canvas width="200" height="200"></canvas>
+              <div class="cropper-controls">
+                <label for="${fieldId}-zoom">Zoom</label>
+                <input type="range" id="${fieldId}-zoom" min="1" max="3" step="0.1" value="1" />
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div>
+          <label for="${fieldId}">${field.name}</label>
+          <input type="text" id="${fieldId}" data-field="${field.name}" />
+        </div>
+      `;
+    };
+
+    const attachFieldBehaviors = (tableFields) => {
+      tableFields.forEach((field) => {
+        if (field.type !== "Image") return;
+        const fieldId = `member-${field.name.replace(/\s+/g, "-").toLowerCase()}`;
+        const fileInput = document.getElementById(fieldId);
+        const cropper = memberInfoFormFields.querySelector(`[data-cropper="${fieldId}"]`);
+        if (!fileInput || !cropper) return;
+        const canvas = cropper.querySelector("canvas");
+        const zoomControl = cropper.querySelector(`#${fieldId}-zoom`);
+        const ctx = canvas.getContext("2d");
+        const state = {
+          image: null,
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+          dragging: false,
+          lastX: 0,
+          lastY: 0,
+        };
+        cropperState = state;
+
+        const draw = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          if (!state.image) return;
+          const baseScale = Math.max(
+            canvas.width / state.image.width,
+            canvas.height / state.image.height,
+          );
+          const scale = baseScale * state.scale;
+          const drawWidth = state.image.width * scale;
+          const drawHeight = state.image.height * scale;
+          const x = (canvas.width - drawWidth) / 2 + state.offsetX;
+          const y = (canvas.height - drawHeight) / 2 + state.offsetY;
+          ctx.drawImage(state.image, x, y, drawWidth, drawHeight);
+        };
+
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+              state.image = img;
+              state.scale = 1;
+              state.offsetX = 0;
+              state.offsetY = 0;
+              draw();
+            };
+            img.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        });
+
+        zoomControl.addEventListener("input", (event) => {
+          state.scale = Number(event.target.value);
+          draw();
+        });
+
+        canvas.addEventListener("mousedown", (event) => {
+          state.dragging = true;
+          state.lastX = event.clientX;
+          state.lastY = event.clientY;
+        });
+
+        window.addEventListener("mouseup", () => {
+          state.dragging = false;
+        });
+
+        window.addEventListener("mousemove", (event) => {
+          if (!state.dragging) return;
+          const deltaX = event.clientX - state.lastX;
+          const deltaY = event.clientY - state.lastY;
+          state.lastX = event.clientX;
+          state.lastY = event.clientY;
+          state.offsetX += deltaX;
+          state.offsetY += deltaY;
+          draw();
+        });
+      });
+    };
+
+    closeMemberInfoModal.addEventListener("click", closeMemberInfoModalView);
+    cancelMemberInfo.addEventListener("click", closeMemberInfoModalView);
+    memberInfoModal.addEventListener("click", (event) => {
+      if (event.target === memberInfoModal) {
+        closeMemberInfoModalView();
+      }
+    });
+
+    memberInfoForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      closeMemberInfoModalView();
+    });
 
   </script>
 </body>
