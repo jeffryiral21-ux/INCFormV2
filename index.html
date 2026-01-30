@@ -220,6 +220,8 @@
       background: linear-gradient(135deg, #1c3faa, #355dd6);
       box-shadow: 0 8px 16px rgba(28, 63, 170, 0.24);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 999px;
+      color: #fff;
     }
 
     button.primary:hover {
@@ -329,6 +331,14 @@
       display: grid;
       gap: 12px;
       margin-bottom: 16px;
+    }
+
+    .choice-field {
+      display: none;
+    }
+
+    .choice-field.is-visible {
+      display: block;
     }
 
     .table-config label {
@@ -614,6 +624,14 @@
                   <option value="Number">Number</option>
                 </select>
               </div>
+              <div class="choice-field" id="choiceField">
+                <label for="choiceInput">Choices</label>
+                <input
+                  type="text"
+                  id="choiceInput"
+                  placeholder="Enter choices separated by commas"
+                />
+              </div>
               <button type="submit" class="primary">Add Field</button>
             </form>
             <div class="field-actions">
@@ -669,6 +687,8 @@
     const fieldForm = document.getElementById("fieldForm");
     const fieldNameInput = document.getElementById("fieldNameInput");
     const fieldTypeSelect = document.getElementById("fieldTypeSelect");
+    const choiceField = document.getElementById("choiceField");
+    const choiceInput = document.getElementById("choiceInput");
     const fieldListBody = document.getElementById("fieldListBody");
     const deleteFieldButton = document.getElementById("deleteField");
     const cloneFieldButton = document.getElementById("cloneField");
@@ -816,6 +836,8 @@
       tableConfigTitle.textContent = `${tableData.name} Configuration`;
       tableNameInput.value = tableData.name;
       tableConfigStatus.textContent = "";
+      choiceField.classList.remove("is-visible");
+      choiceInput.value = "";
       renderFieldList();
     };
 
@@ -853,6 +875,8 @@
       tablesData[currentTableKey].fields.push({ name: fieldName, type: fieldType });
       fieldNameInput.value = "";
       fieldTypeSelect.value = "";
+      choiceInput.value = "";
+      choiceField.classList.remove("is-visible");
       renderFieldList();
       saveTablesData();
     });
@@ -895,6 +919,15 @@
     updateTableConfigButton.addEventListener("click", () => {
       if (!currentTableKey) return;
       saveTablesData();
+    });
+
+    fieldTypeSelect.addEventListener("change", () => {
+      if (fieldTypeSelect.value === "Choice") {
+        choiceField.classList.add("is-visible");
+      } else {
+        choiceField.classList.remove("is-visible");
+        choiceInput.value = "";
+      }
     });
 
     syncTableList();
