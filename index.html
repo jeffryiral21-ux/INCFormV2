@@ -775,6 +775,8 @@
                     <th>Select</th>
                     <th>Field Name</th>
                     <th>Type</th>
+                    <th>Choice List</th>
+                    <th>Reference</th>
                   </tr>
                 </thead>
                 <tbody id="fieldListBody"></tbody>
@@ -1175,6 +1177,28 @@
                   <option value="Reference" ${field.type === "Reference" ? "selected" : ""}>Reference</option>
                 </select>
               </td>
+              <td>
+                <input
+                  type="text"
+                  class="field-choice-input"
+                  data-index="${index}"
+                  placeholder="Choice list"
+                  value="${field.choices ? field.choices.join(", ") : ""}"
+                />
+              </td>
+              <td>
+                <select class="field-reference-select" data-index="${index}">
+                  <option value="">Select table</option>
+                  ${Object.entries(tablesData)
+                    .map(
+                      ([key, data]) =>
+                        `<option value="${key}" ${
+                          field.referenceTable === key ? "selected" : ""
+                        }>${data.name}</option>`,
+                    )
+                    .join("")}
+                </select>
+              </td>
             </tr>
           `,
         )
@@ -1197,6 +1221,26 @@
           const index = Number(event.target.dataset.index);
           if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
           tablesData[currentTableKey].fields[index].type = event.target.value;
+          saveTablesData();
+        });
+      });
+      fieldListBody.querySelectorAll(".field-choice-input").forEach((input) => {
+        input.addEventListener("input", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
+          const choices = event.target.value
+            .split(",")
+            .map((choice) => choice.trim())
+            .filter(Boolean);
+          tablesData[currentTableKey].fields[index].choices = choices;
+          saveTablesData();
+        });
+      });
+      fieldListBody.querySelectorAll(".field-reference-select").forEach((select) => {
+        select.addEventListener("change", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
+          tablesData[currentTableKey].fields[index].referenceTable = event.target.value || "";
           saveTablesData();
         });
       });
