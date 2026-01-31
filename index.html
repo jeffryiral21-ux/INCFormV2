@@ -408,6 +408,17 @@
       color: #64748b;
     }
 
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #1f2937;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
     .field-list th,
     .field-list td {
       padding: 10px 12px;
@@ -485,6 +496,51 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
+    }
+
+    .modal-field {
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px dashed transparent;
+      background: #fff;
+    }
+
+    .modal-field.is-dragging {
+      border-color: #94a3b8;
+      background: #f1f5f9;
+      opacity: 0.7;
+    }
+
+    .modal-section {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    .list-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .list-controls label {
+      font-size: 12px;
+      color: #475569;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .list-controls input[type="text"] {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 12px;
     }
 
     .modal-form label {
@@ -784,6 +840,7 @@
                     <th>Type</th>
                     <th>Choice List</th>
                     <th>Reference</th>
+                    <th>Section</th>
                   </tr>
                 </thead>
                 <tbody id="fieldListBody"></tbody>
@@ -973,6 +1030,12 @@
       localStorage.setItem(MEMBER_INFO_STORAGE_KEY, JSON.stringify(memberInfoRecords));
     };
 
+    let memberInfoViewState = {
+      visibleColumns: new Set(),
+      filters: {},
+      sort: { field: null, direction: "asc" },
+    };
+
     const renderMemberInfoList = (contentArea) => {
       tablesData = loadTablesData();
       memberInfoRecords = loadMemberInfoRecords();
@@ -981,6 +1044,43 @@
       const memberInfoTable = memberInfoKey ? tablesData[memberInfoKey] : null;
       const tableFields = memberInfoTable?.fields ?? [];
       const hasFields = tableFields.length > 0;
+      if (memberInfoViewState.visibleColumns.size === 0 && hasFields) {
+        tableFields.forEach((field) => memberInfoViewState.visibleColumns.add(field.name));
+      }
+      const visibleFields = tableFields.filter((field) =>
+        memberInfoViewState.visibleColumns.has(field.name),
+      );
+      const filterInputs = visibleFields
+        .map(
+          (field) => `
+            <label>
+              ${field.name}
+              <input type="text" data-filter-field="${field.name}" value="${
+            memberInfoViewState.filters[field.name] ?? ""
+          }" />
+            </label>
+          `,
+        )
+        .join("");
+
+      const filteredRecords = memberInfoRecords.filter((record) =>
+        visibleFields.every((field) => {
+          const filterValue = (memberInfoViewState.filters[field.name] ?? "").toLowerCase();
+          if (!filterValue) return true;
+          return String(record[field.name] ?? "").toLowerCase().includes(filterValue);
+        }),
+      );
+
+      const sortedRecords = [...filteredRecords];
+      if (memberInfoViewState.sort.field) {
+        const { field, direction } = memberInfoViewState.sort;
+        sortedRecords.sort((a, b) => {
+          const valueA = String(a[field] ?? "");
+          const valueB = String(b[field] ?? "");
+          return direction === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+        });
+      }
+
       contentArea.innerHTML = `
         <strong>Member Information selected.</strong>
         <div class="content-area" style="margin-top: 16px;">
@@ -1003,21 +1103,58 @@
         ${
           memberInfoTable
             ? `
+              <div class="list-controls">
+                ${visibleFields
+                  .map(
+                    (field) => `
+                      <label>
+                        <input type="checkbox" data-column-toggle="${field.name}" checked />
+                        ${field.name}
+                      </label>
+                    `,
+                  )
+                  .join("")}
+                ${tableFields
+                  .filter((field) => !memberInfoViewState.visibleColumns.has(field.name))
+                  .map(
+                    (field) => `
+                      <label>
+                        <input type="checkbox" data-column-toggle="${field.name}" />
+                        ${field.name}
+                      </label>
+                    `,
+                  )
+                  .join("")}
+              </div>
+              <div class="list-controls">
+                ${filterInputs}
+              </div>
               <div class="table-list" style="margin-top: 12px;">
                 <table>
                   <thead>
                     <tr>
-                      ${hasFields ? tableFields.map((field) => `<th>${field.name}</th>`).join("") : ""}
+                      ${
+                        visibleFields.length
+                          ? visibleFields
+                              .map(
+                                (field) =>
+                                  `<th data-sort-field="${field.name}" style="cursor:pointer;">
+                                    ${field.name}
+                                  </th>`,
+                              )
+                              .join("")
+                          : ""
+                      }
                     </tr>
                   </thead>
                   <tbody>
                     ${
-                      hasFields
-                        ? memberInfoRecords
+                      visibleFields.length
+                        ? sortedRecords
                             .map(
                               (record) => `
                                 <tr>
-                                  ${tableFields
+                                  ${visibleFields
                                     .map((field) => {
                                       const value = record[field.name] ?? "";
                                       if (field.type === "Image" && value) {
@@ -1030,7 +1167,7 @@
                               `,
                             )
                             .join("")
-                        : `<tr><td colspan="1">No fields defined for Member Information.</td></tr>`
+                        : `<tr><td colspan="1">Select columns to display.</td></tr>`
                     }
                   </tbody>
                 </table>
@@ -1048,6 +1185,40 @@
       if (newButton && memberInfoKey) {
         newButton.addEventListener("click", () => openMemberInfoModal(memberInfoKey));
       }
+
+      contentArea.querySelectorAll("[data-column-toggle]").forEach((checkbox) => {
+        checkbox.addEventListener("change", (event) => {
+          const fieldName = event.target.dataset.columnToggle;
+          if (event.target.checked) {
+            memberInfoViewState.visibleColumns.add(fieldName);
+          } else {
+            memberInfoViewState.visibleColumns.delete(fieldName);
+          }
+          renderMemberInfoList(contentArea);
+        });
+      });
+
+      contentArea.querySelectorAll("[data-filter-field]").forEach((input) => {
+        input.addEventListener("input", (event) => {
+          const fieldName = event.target.dataset.filterField;
+          memberInfoViewState.filters[fieldName] = event.target.value;
+          renderMemberInfoList(contentArea);
+        });
+      });
+
+      contentArea.querySelectorAll("[data-sort-field]").forEach((header) => {
+        header.addEventListener("click", () => {
+          const fieldName = header.dataset.sortField;
+          if (memberInfoViewState.sort.field === fieldName) {
+            memberInfoViewState.sort.direction =
+              memberInfoViewState.sort.direction === "asc" ? "desc" : "asc";
+          } else {
+            memberInfoViewState.sort.field = fieldName;
+            memberInfoViewState.sort.direction = "asc";
+          }
+          renderMemberInfoList(contentArea);
+        });
+      });
     };
 
     const updateTableActions = () => {
@@ -1206,6 +1377,15 @@
                     .join("")}
                 </select>
               </td>
+              <td>
+                <input
+                  type="text"
+                  class="field-section-input"
+                  data-index="${index}"
+                  placeholder="Section name"
+                  value="${field.section ?? ""}"
+                />
+              </td>
             </tr>
           `,
         )
@@ -1248,6 +1428,14 @@
           const index = Number(event.target.dataset.index);
           if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
           tablesData[currentTableKey].fields[index].referenceTable = event.target.value || "";
+          saveTablesData();
+        });
+      });
+      fieldListBody.querySelectorAll(".field-section-input").forEach((input) => {
+        input.addEventListener("input", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
+          tablesData[currentTableKey].fields[index].section = event.target.value.trim();
           saveTablesData();
         });
       });
@@ -1449,8 +1637,19 @@
       tablesData = loadTablesData();
       const memberInfoTable = tablesData[tableKeyOrName] ?? getTableByName(tableKeyOrName);
       const tableFields = memberInfoTable?.fields ?? [];
-      memberInfoFormFields.innerHTML = tableFields
-        .map((field) => buildFieldInput(field))
+      const sections = {};
+      tableFields.forEach((field) => {
+        const sectionName = field.section?.trim() || "General";
+        if (!sections[sectionName]) sections[sectionName] = [];
+        sections[sectionName].push(field);
+      });
+      memberInfoFormFields.innerHTML = Object.entries(sections)
+        .map(
+          ([sectionName, fields]) => `
+            <div class="modal-section">${sectionName}</div>
+            ${fields.map((field) => buildFieldInput(field)).join("")}
+          `,
+        )
         .join("");
       attachFieldBehaviors(tableFields);
       memberInfoModal.classList.add("is-visible");
@@ -1470,7 +1669,7 @@
           .map((choice) => `<option>${choice}</option>`)
           .join("");
         return `
-          <div>
+          <div class="modal-field" draggable="true" data-field-name="${field.name}">
             <label for="${fieldId}">${field.name}</label>
             <select id="${fieldId}" data-field="${field.name}">
               <option value="">Select ${field.name}</option>
@@ -1481,7 +1680,7 @@
       }
       if (field.type === "Date") {
         return `
-          <div>
+          <div class="modal-field" draggable="true" data-field-name="${field.name}">
             <label for="${fieldId}">${field.name}</label>
             <input type="date" id="${fieldId}" data-field="${field.name}" />
           </div>
@@ -1494,7 +1693,7 @@
           .join("");
         const helperText = records.length === 0 ? "(No reference records available)" : "";
         return `
-          <div>
+          <div class="modal-field" draggable="true" data-field-name="${field.name}">
             <label for="${fieldId}">${field.name}</label>
             <select id="${fieldId}" data-field="${field.name}">
               <option value="">Select ${field.name}</option>
@@ -1506,7 +1705,7 @@
       }
       if (field.type === "Image") {
         return `
-          <div>
+          <div class="modal-field" draggable="true" data-field-name="${field.name}">
             <label for="${fieldId}">${field.name}</label>
             <input type="file" id="${fieldId}" accept="image/*" data-field="${field.name}" />
             <div class="cropper" data-cropper="${fieldId}">
@@ -1519,8 +1718,18 @@
           </div>
         `;
       }
+      if (field.type === "Checkbox") {
+        return `
+          <div class="modal-field" draggable="true" data-field-name="${field.name}">
+            <label>
+              <input type="checkbox" id="${fieldId}" data-field="${field.name}" />
+              ${field.name}
+            </label>
+          </div>
+        `;
+      }
       return `
-        <div>
+        <div class="modal-field" draggable="true" data-field-name="${field.name}">
           <label for="${fieldId}">${field.name}</label>
           <input type="text" id="${fieldId}" data-field="${field.name}" />
         </div>
@@ -1607,6 +1816,35 @@
           draw();
         });
       });
+
+      memberInfoFormFields.querySelectorAll(".modal-field").forEach((fieldItem) => {
+        fieldItem.addEventListener("dragstart", (event) => {
+          event.dataTransfer.setData("text/plain", fieldItem.dataset.fieldName);
+          fieldItem.classList.add("is-dragging");
+        });
+        fieldItem.addEventListener("dragend", () => {
+          fieldItem.classList.remove("is-dragging");
+        });
+        fieldItem.addEventListener("dragover", (event) => {
+          event.preventDefault();
+        });
+        fieldItem.addEventListener("drop", (event) => {
+          event.preventDefault();
+          const sourceName = event.dataTransfer.getData("text/plain");
+          const targetName = fieldItem.dataset.fieldName;
+          if (!sourceName || !targetName || sourceName === targetName) return;
+          const memberInfoKey = getTableKeyByName("Member Information");
+          if (!memberInfoKey) return;
+          const fields = tablesData[memberInfoKey].fields;
+          const sourceIndex = fields.findIndex((item) => item.name === sourceName);
+          const targetIndex = fields.findIndex((item) => item.name === targetName);
+          if (sourceIndex === -1 || targetIndex === -1) return;
+          const [moved] = fields.splice(sourceIndex, 1);
+          fields.splice(targetIndex, 0, moved);
+          saveTablesData();
+          openMemberInfoModal(memberInfoKey);
+        });
+      });
     };
 
     closeMemberInfoModal.addEventListener("click", closeMemberInfoModalView);
@@ -1637,6 +1875,10 @@
         if (field.type === "Reference") {
           const selectedOption = input.selectedOptions?.[0];
           newRecord[field.name] = selectedOption?.textContent ?? "";
+          return;
+        }
+        if (field.type === "Checkbox") {
+          newRecord[field.name] = input.checked ? "Yes" : "No";
           return;
         }
         newRecord[field.name] = input.value ?? "";
