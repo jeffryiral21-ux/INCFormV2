@@ -2243,7 +2243,8 @@
       return value ?? "";
     };
 
-    const getMemberRecordId = (record) => record.__memberId ?? record.Member ?? "";
+    const getMemberRecordId = (record, fallbackId = "") =>
+      record.__memberId ?? (record.Member === fallbackId ? fallbackId : "");
 
     const renderMemberTungkulinList = () => {
       if (!currentMemberRecord) {
@@ -2257,7 +2258,7 @@
       const memberId = currentMemberRecord["Member ID"] ?? "";
       const related = memberTungkulinRecords
         .map((record, index) => ({ record, index }))
-        .filter(({ record }) => getMemberRecordId(record) === memberId);
+        .filter(({ record }) => getMemberRecordId(record, memberId) === memberId);
       memberTungkulinListSection.hidden = false;
       memberTungkulinListHead.innerHTML = `
         <tr>
