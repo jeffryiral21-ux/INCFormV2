@@ -543,6 +543,45 @@
       font-size: 12px;
     }
 
+    .list-menu {
+      position: absolute;
+      z-index: 60;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+      padding: 12px;
+      display: none;
+      min-width: 220px;
+    }
+
+    .list-menu.is-visible {
+      display: block;
+    }
+
+    .list-menu button {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .list-menu button:hover {
+      background: #f1f5f9;
+    }
+
+    .list-menu label {
+      font-size: 12px;
+      color: #475569;
+      display: block;
+      margin-top: 8px;
+    }
+
     .modal-form label {
       font-size: 13px;
       color: #475569;
@@ -1032,7 +1071,8 @@
 
     let memberInfoViewState = {
       visibleColumns: new Set(),
-      filters: {},
+      filterField: null,
+      filterValue: null,
       sort: { field: null, direction: "asc" },
     };
 
@@ -1050,26 +1090,14 @@
       const visibleFields = tableFields.filter((field) =>
         memberInfoViewState.visibleColumns.has(field.name),
       );
-      const filterInputs = visibleFields
-        .map(
-          (field) => `
-            <label>
-              ${field.name}
-              <input type="text" data-filter-field="${field.name}" value="${
-            memberInfoViewState.filters[field.name] ?? ""
-          }" />
-            </label>
-          `,
-        )
-        .join("");
 
-      const filteredRecords = memberInfoRecords.filter((record) =>
-        visibleFields.every((field) => {
-          const filterValue = (memberInfoViewState.filters[field.name] ?? "").toLowerCase();
-          if (!filterValue) return true;
-          return String(record[field.name] ?? "").toLowerCase().includes(filterValue);
-        }),
-      );
+      const filteredRecords = memberInfoRecords.filter((record) => {
+        if (!memberInfoViewState.filterField || !memberInfoViewState.filterValue) return true;
+        return (
+          String(record[memberInfoViewState.filterField] ?? "") ===
+          memberInfoViewState.filterValue
+        );
+      });
 
       const sortedRecords = [...filteredRecords];
       if (memberInfoViewState.sort.field) {
@@ -1126,8 +1154,21 @@
                   )
                   .join("")}
               </div>
-              <div class="list-controls">
-                ${filterInputs}
+              <div class="list-controls"></div>
+              <div class="list-menu" id="memberInfoListMenu">
+                <button type="button" data-action="asc">Ascending</button>
+                <button type="button" data-action="desc">Descending</button>
+                <button type="button" data-action="filter">Filter</button>
+                <div id="memberInfoFilterControls" style="display:none;">
+                  <label>
+                    Field
+                    <select id="memberInfoFilterField"></select>
+                  </label>
+                  <label>
+                    Value
+                    <select id="memberInfoFilterValue"></select>
+                  </label>
+                </div>
               </div>
               <div class="table-list" style="margin-top: 12px;">
                 <table>
@@ -1198,27 +1239,78 @@
         });
       });
 
-      contentArea.querySelectorAll("[data-filter-field]").forEach((input) => {
-        input.addEventListener("input", (event) => {
-          const fieldName = event.target.dataset.filterField;
-          memberInfoViewState.filters[fieldName] = event.target.value;
-          renderMemberInfoList(contentArea);
+      contentArea.querySelectorAll("[data-sort-field]").forEach((header) => {
+        header.addEventListener("click", () => {
+          const menu = contentArea.querySelector("#memberInfoListMenu");
+          menu.dataset.sortField = header.dataset.sortField;
+          const rect = header.getBoundingClientRect();
+          menu.style.top = `${rect.bottom + window.scrollY + 6}px`;
+          menu.style.left = `${rect.left + window.scrollX}px`;
+          menu.classList.add("is-visible");
         });
       });
 
-      contentArea.querySelectorAll("[data-sort-field]").forEach((header) => {
-        header.addEventListener("click", () => {
-          const fieldName = header.dataset.sortField;
-          if (memberInfoViewState.sort.field === fieldName) {
-            memberInfoViewState.sort.direction =
-              memberInfoViewState.sort.direction === "asc" ? "desc" : "asc";
-          } else {
-            memberInfoViewState.sort.field = fieldName;
-            memberInfoViewState.sort.direction = "asc";
-          }
+      const menu = contentArea.querySelector("#memberInfoListMenu");
+      const filterControls = contentArea.querySelector("#memberInfoFilterControls");
+      const filterFieldSelect = contentArea.querySelector("#memberInfoFilterField");
+      const filterValueSelect = contentArea.querySelector("#memberInfoFilterValue");
+
+      if (menu) {
+        menu.querySelectorAll("[data-action]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const action = button.dataset.action;
+            const fieldName = menu.dataset.sortField;
+            if (action === "asc" || action === "desc") {
+              memberInfoViewState.sort.field = fieldName;
+              memberInfoViewState.sort.direction = action;
+              memberInfoViewState.filterField = null;
+              memberInfoViewState.filterValue = null;
+              renderMemberInfoList(contentArea);
+            }
+            if (action === "filter") {
+              filterControls.style.display = "block";
+              filterFieldSelect.innerHTML = tableFields
+                .map((field) => `<option value="${field.name}">${field.name}</option>`)
+                .join("");
+              filterFieldSelect.value = fieldName || tableFields[0]?.name || "";
+              const values = Array.from(
+                new Set(
+                  memberInfoRecords.map((record) => String(record[filterFieldSelect.value] ?? "")),
+                ),
+              ).filter((value) => value !== "");
+              filterValueSelect.innerHTML = values
+                .map((value) => `<option value="${value}">${value}</option>`)
+                .join("");
+            }
+          });
+        });
+
+        filterFieldSelect?.addEventListener("change", () => {
+          const values = Array.from(
+            new Set(memberInfoRecords.map((record) => String(record[filterFieldSelect.value] ?? ""))),
+          ).filter((value) => value !== "");
+          filterValueSelect.innerHTML = values
+            .map((value) => `<option value="${value}">${value}</option>`)
+            .join("");
+        });
+
+        filterValueSelect?.addEventListener("change", () => {
+          memberInfoViewState.filterField = filterFieldSelect.value;
+          memberInfoViewState.filterValue = filterValueSelect.value;
           renderMemberInfoList(contentArea);
         });
-      });
+
+        window.addEventListener(
+          "click",
+          (event) => {
+            if (!menu.contains(event.target) && !event.target.dataset.sortField) {
+              menu.classList.remove("is-visible");
+              filterControls.style.display = "none";
+            }
+          },
+          { once: true },
+        );
+      }
     };
 
     const updateTableActions = () => {
