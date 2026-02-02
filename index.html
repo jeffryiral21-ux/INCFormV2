@@ -655,6 +655,21 @@
       margin-top: 20px;
     }
 
+    .modal-footer-list {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .search-button {
+      margin-left: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
     .cropper {
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -967,6 +982,28 @@
           <button type="button" class="ghost" id="cancelMemberInfo">Cancel</button>
           <button type="submit" class="primary">Save</button>
         </div>
+        <div class="modal-footer-list" id="memberTungkulinListSection" hidden>
+          <div class="list-header">
+            <strong>Member Tungkulin Information</strong>
+          </div>
+          <div class="table-actions rounded-actions" style="margin-top: 12px;">
+            <button type="button" class="primary" id="newMemberTungkulin">New</button>
+            <button type="button" class="secondary" id="deleteMemberTungkulin" disabled>Delete</button>
+          </div>
+          <div class="table-list scrollable-table" style="margin-top: 12px;">
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Role</th>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                </tr>
+              </thead>
+              <tbody id="memberTungkulinListBody"></tbody>
+            </table>
+          </div>
+        </div>
       </form>
     </div>
   </div>
@@ -994,6 +1031,42 @@
       <div class="modal-actions">
         <button type="button" class="ghost" id="cancelMemberInfoColumns">Cancel</button>
         <button type="button" class="primary" id="saveMemberInfoColumns">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="memberTungkulinModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memberTungkulinTitle">
+      <div class="modal-header">
+        <h4 id="memberTungkulinTitle">New Member Tungkulin</h4>
+        <button type="button" class="modal-close" id="closeMemberTungkulin" aria-label="Close">×</button>
+      </div>
+      <form id="memberTungkulinForm">
+        <div class="modal-form" id="memberTungkulinFields"></div>
+        <div class="modal-actions">
+          <button type="button" class="ghost" id="cancelMemberTungkulin">Cancel</button>
+          <button type="submit" class="primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="memberSearchModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memberSearchTitle">
+      <div class="modal-header">
+        <h4 id="memberSearchTitle">Select Member</h4>
+        <button type="button" class="modal-close" id="closeMemberSearch" aria-label="Close">×</button>
+      </div>
+      <div class="table-list scrollable-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Registry Number</th>
+              <th>Full Name</th>
+            </tr>
+          </thead>
+          <tbody id="memberSearchBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -1039,6 +1112,18 @@
     const selectedColumns = document.getElementById("selectedColumns");
     const addColumn = document.getElementById("addColumn");
     const removeColumn = document.getElementById("removeColumn");
+    const memberTungkulinListSection = document.getElementById("memberTungkulinListSection");
+    const memberTungkulinListBody = document.getElementById("memberTungkulinListBody");
+    const newMemberTungkulin = document.getElementById("newMemberTungkulin");
+    const deleteMemberTungkulin = document.getElementById("deleteMemberTungkulin");
+    const memberTungkulinModal = document.getElementById("memberTungkulinModal");
+    const closeMemberTungkulin = document.getElementById("closeMemberTungkulin");
+    const cancelMemberTungkulin = document.getElementById("cancelMemberTungkulin");
+    const memberTungkulinForm = document.getElementById("memberTungkulinForm");
+    const memberTungkulinFields = document.getElementById("memberTungkulinFields");
+    const memberSearchModal = document.getElementById("memberSearchModal");
+    const closeMemberSearch = document.getElementById("closeMemberSearch");
+    const memberSearchBody = document.getElementById("memberSearchBody");
     const contentMap = {
       forms: document.getElementById("formsContent"),
       reports: document.getElementById("reportsContent"),
@@ -1047,6 +1132,7 @@
     };
     const MEMBER_INFO_STORAGE_KEY = "incform_member_info_records";
     const MEMBER_INFO_COLUMNS_KEY = "incform_member_info_columns";
+    const MEMBER_TUNGKULIN_STORAGE_KEY = "incform_member_tungkulin_records";
     const defaultMemberInfoRecords = [
       {
         "Member ID": "MI-001",
@@ -1159,6 +1245,21 @@
       localStorage.setItem(MEMBER_INFO_STORAGE_KEY, JSON.stringify(memberInfoRecords));
     };
 
+    const loadMemberTungkulinRecords = () => {
+      const saved = localStorage.getItem(MEMBER_TUNGKULIN_STORAGE_KEY);
+      if (!saved) return [];
+      try {
+        return JSON.parse(saved);
+      } catch (error) {
+        console.warn("Failed to parse member tungkulin records, reverting to empty.", error);
+        return [];
+      }
+    };
+
+    const saveMemberTungkulinRecords = () => {
+      localStorage.setItem(MEMBER_TUNGKULIN_STORAGE_KEY, JSON.stringify(memberTungkulinRecords));
+    };
+
     let memberInfoViewState = {
       visibleColumns: new Set(),
       filterField: null,
@@ -1167,6 +1268,10 @@
     };
     let selectedRecordIndexes = new Set();
     let editingRecordIndex = null;
+    let selectedTungkulinIndexes = new Set();
+    let editingTungkulinIndex = null;
+    let currentMemberRecord = null;
+    let memberTungkulinRecords = [];
 
     const renderMemberInfoList = (contentArea) => {
       tablesData = loadTablesData();
@@ -1347,6 +1452,7 @@
           const recordData = sortedRecords[rowIndex];
           if (!recordData) return;
           editingRecordIndex = recordData.index;
+          currentMemberRecord = recordData.record;
           openMemberInfoModal(memberInfoKey);
           populateMemberInfoForm(recordData.record, tableFields);
         });
@@ -1872,6 +1978,7 @@
         .join("");
       setActiveSection(activeSection);
       attachFieldBehaviors(tableFields);
+      renderMemberTungkulinList();
       memberInfoModal.classList.add("is-visible");
       setSaveEnabled(false);
     };
@@ -1923,6 +2030,11 @@
               ${options}
             </select>
             <div style="font-size:11px;color:#64748b;margin-top:4px;">${helperText}</div>
+            ${
+              field.name === "Member"
+                ? `<button type="button" class="search-button" data-member-search="${fieldId}">🔍</button>`
+                : ""
+            }
           </div>
         `;
       }
@@ -2075,6 +2187,13 @@
         });
       });
 
+      memberInfoFormFields.querySelectorAll("[data-member-search]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const fieldId = button.dataset.memberSearch;
+          openMemberSearchModal(fieldId);
+        });
+      });
+
       memberInfoFormFields.querySelectorAll("input, select").forEach((input) => {
         input.addEventListener("input", () => setSaveEnabled(true));
         input.addEventListener("change", () => setSaveEnabled(true));
@@ -2124,6 +2243,139 @@
       });
       setSaveEnabled(false);
     };
+
+    const renderMemberTungkulinList = () => {
+      if (!currentMemberRecord) {
+        memberTungkulinListSection.hidden = true;
+        return;
+      }
+      selectedTungkulinIndexes = new Set();
+      memberTungkulinRecords = loadMemberTungkulinRecords();
+      const memberId = currentMemberRecord["Member ID"] ?? "";
+      const related = memberTungkulinRecords.filter((record) => record.Member === memberId);
+      memberTungkulinListSection.hidden = false;
+      memberTungkulinListBody.innerHTML = related
+        .map(
+          (record, index) => `
+            <tr>
+              <td><input type="checkbox" class="tungkulin-select" data-index="${index}" /></td>
+              <td>${record.Role ?? ""}</td>
+              <td>${record["Start Date"] ?? ""}</td>
+              <td>${record["End Date"] ?? ""}</td>
+            </tr>
+          `,
+        )
+        .join("");
+
+      newMemberTungkulin.onclick = () => openMemberTungkulinModal();
+      deleteMemberTungkulin.disabled = selectedTungkulinIndexes.size === 0;
+      deleteMemberTungkulin.onclick = () => {
+        if (selectedTungkulinIndexes.size === 0) return;
+        const filtered = memberTungkulinRecords.filter((record) => record.Member === memberId);
+        const remaining = filtered.filter((_, idx) => !selectedTungkulinIndexes.has(idx));
+        memberTungkulinRecords = memberTungkulinRecords.filter((record) => record.Member !== memberId);
+        memberTungkulinRecords.push(...remaining);
+        selectedTungkulinIndexes = new Set();
+        saveMemberTungkulinRecords();
+        renderMemberTungkulinList();
+      };
+
+      memberTungkulinListBody.querySelectorAll(".tungkulin-select").forEach((checkbox) => {
+        checkbox.addEventListener("change", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (event.target.checked) {
+            selectedTungkulinIndexes.add(index);
+          } else {
+            selectedTungkulinIndexes.delete(index);
+          }
+          deleteMemberTungkulin.disabled = selectedTungkulinIndexes.size === 0;
+        });
+      });
+    };
+
+    const openMemberTungkulinModal = () => {
+      const memberTungkulinTable = getTableByName("Member Tungkulin Information");
+      const tableFields = memberTungkulinTable?.fields ?? [];
+      memberTungkulinFields.innerHTML = tableFields
+        .map((field) => buildTungkulinFieldInput(field))
+        .join("");
+      memberTungkulinModal.classList.add("is-visible");
+    };
+
+    const buildTungkulinFieldInput = (field) => {
+      const fieldId = `tungkulin-${field.name.replace(/\\s+/g, "-").toLowerCase()}`;
+      if (field.type === "Choice") {
+        const options = (field.choices ?? [])
+          .map((choice) => `<option>${choice}</option>`)
+          .join("");
+        return `
+          <div class="modal-field">
+            <label for="${fieldId}">${field.name}</label>
+            <select id="${fieldId}">
+              <option value="">Select ${field.name}</option>
+              ${options}
+            </select>
+          </div>
+        `;
+      }
+      if (field.type === "Date") {
+        return `
+          <div class="modal-field">
+            <label for="${fieldId}">${field.name}</label>
+            <input type="date" id="${fieldId}" />
+          </div>
+        `;
+      }
+      if (field.type === "Reference" && field.name === "Member") {
+        return `
+          <div class="modal-field">
+            <label for="${fieldId}">${field.name}</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="text" id="${fieldId}" readonly />
+              <button type="button" class="search-button" data-member-search="${fieldId}">🔍</button>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="modal-field">
+          <label for="${fieldId}">${field.name}</label>
+          <input type="text" id="${fieldId}" />
+        </div>
+      `;
+    };
+
+    const openMemberSearchModal = (fieldId) => {
+      memberSearchBody.innerHTML = memberInfoRecords
+        .map(
+          (record) => `
+            <tr data-member-id="${record["Member ID"] ?? ""}">
+              <td>${record["Member ID"] ?? ""}</td>
+              <td>${record["Name"] ?? ""}</td>
+            </tr>
+          `,
+        )
+        .join("");
+      memberSearchModal.classList.add("is-visible");
+      memberSearchBody.querySelectorAll("tr").forEach((row) => {
+        row.addEventListener("click", () => {
+          const memberId = row.dataset.memberId;
+          const input = document.getElementById(fieldId);
+          if (input) input.value = memberId;
+          memberSearchModal.classList.remove("is-visible");
+        });
+      });
+    };
+
+    closeMemberSearch?.addEventListener("click", () => {
+      memberSearchModal.classList.remove("is-visible");
+    });
+
+    memberSearchModal?.addEventListener("click", (event) => {
+      if (event.target === memberSearchModal) {
+        memberSearchModal.classList.remove("is-visible");
+      }
+    });
 
     const openMemberInfoColumnsModal = (tableFields) => {
       if (!memberInfoColumnsModal) return;
@@ -2225,6 +2477,39 @@
       saveMemberInfoRecords();
       renderMemberInfoList(contentMap.records);
       closeMemberInfoModalView();
+    });
+
+    memberTungkulinForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const memberTungkulinTable = getTableByName("Member Tungkulin Information");
+      const tableFields = memberTungkulinTable?.fields ?? [];
+      const newRecord = {};
+      tableFields.forEach((field) => {
+        const fieldId = `tungkulin-${field.name.replace(/\\s+/g, "-").toLowerCase()}`;
+        const input = document.getElementById(fieldId);
+        if (!input) return;
+        newRecord[field.name] = input.value ?? "";
+      });
+      if (currentMemberRecord) {
+        newRecord.Member = currentMemberRecord["Member ID"] ?? "";
+      }
+      memberTungkulinRecords = loadMemberTungkulinRecords();
+      memberTungkulinRecords.unshift(newRecord);
+      saveMemberTungkulinRecords();
+      memberTungkulinModal.classList.remove("is-visible");
+      renderMemberTungkulinList();
+    });
+
+    closeMemberTungkulin?.addEventListener("click", () => {
+      memberTungkulinModal.classList.remove("is-visible");
+    });
+    cancelMemberTungkulin?.addEventListener("click", () => {
+      memberTungkulinModal.classList.remove("is-visible");
+    });
+    memberTungkulinModal?.addEventListener("click", (event) => {
+      if (event.target === memberTungkulinModal) {
+        memberTungkulinModal.classList.remove("is-visible");
+      }
     });
 
   </script>
