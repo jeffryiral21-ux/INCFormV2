@@ -2243,6 +2243,8 @@
       return value ?? "";
     };
 
+    const getMemberRecordId = (record) => record.__memberId ?? record.Member ?? "";
+
     const renderMemberTungkulinList = () => {
       if (!currentMemberRecord) {
         memberTungkulinListSection.hidden = true;
@@ -2253,7 +2255,9 @@
       const memberTungkulinTable = getTableByName("Member Tungkulin Information");
       const tableFields = memberTungkulinTable?.fields ?? [];
       const memberId = currentMemberRecord["Member ID"] ?? "";
-      const related = memberTungkulinRecords.filter((record) => record.Member === memberId);
+      const related = memberTungkulinRecords
+        .map((record, index) => ({ record, index }))
+        .filter(({ record }) => getMemberRecordId(record) === memberId);
       memberTungkulinListSection.hidden = false;
       memberTungkulinListHead.innerHTML = `
         <tr>
@@ -2270,7 +2274,7 @@
       } else {
         memberTungkulinListBody.innerHTML = related
           .map(
-            (record, index) => `
+            ({ record, index }) => `
               <tr>
                 <td><input type="checkbox" class="tungkulin-select" data-index="${index}" /></td>
                 ${tableFields
@@ -2286,10 +2290,9 @@
       deleteMemberTungkulin.disabled = selectedTungkulinIndexes.size === 0;
       deleteMemberTungkulin.onclick = () => {
         if (selectedTungkulinIndexes.size === 0) return;
-        const filtered = memberTungkulinRecords.filter((record) => record.Member === memberId);
-        const remaining = filtered.filter((_, idx) => !selectedTungkulinIndexes.has(idx));
-        memberTungkulinRecords = memberTungkulinRecords.filter((record) => record.Member !== memberId);
-        memberTungkulinRecords.push(...remaining);
+        memberTungkulinRecords = memberTungkulinRecords.filter(
+          (_, index) => !selectedTungkulinIndexes.has(index),
+        );
         selectedTungkulinIndexes = new Set();
         saveMemberTungkulinRecords();
         renderMemberTungkulinList();
@@ -2299,23 +2302,67 @@
         checkbox.addEventListener("change", (event) => {
           const index = Number(event.target.dataset.index);
           if (event.target.checked) {
-            selectedTungkulinIndexes.add(index);
+            const relatedRecord = related[index];
+            if (relatedRecord) selectedTungkulinIndexes.add(relatedRecord.index);
           } else {
-            selectedTungkulinIndexes.delete(index);
+            const relatedRecord = related[index];
+            if (relatedRecord) selectedTungkulinIndexes.delete(relatedRecord.index);
           }
           deleteMemberTungkulin.disabled = selectedTungkulinIndexes.size === 0;
         });
       });
+
+      memberTungkulinListBody.querySelectorAll("tr").forEach((row, rowIndex) => {
+        row.addEventListener("click", (event) => {
+          if (event.target.matches("input")) return;
+          const relatedRecord = related[rowIndex];
+          if (!relatedRecord) return;
+          openMemberTungkulinModal(relatedRecord);
+        });
+      });
     };
 
-    const openMemberTungkulinModal = () => {
+    const openMemberTungkulinModal = (relatedRecord = null) => {
       const memberTungkulinTable = getTableByName("Member Tungkulin Information");
       const tableFields = memberTungkulinTable?.fields ?? [];
       memberTungkulinFields.innerHTML = tableFields
         .map((field) => buildTungkulinFieldInput(field))
         .join("");
       attachMemberSearchHandlers(memberTungkulinFields);
+      const memberField = tableFields.find((field) => field.name === "Member");
+      if (memberField && currentMemberRecord) {
+        const memberFieldId = `tungkulin-${memberField.name.replace(/\\s+/g, "-").toLowerCase()}`;
+        const input = document.getElementById(memberFieldId);
+        if (input) {
+          input.value = getMemberDisplayName(currentMemberRecord);
+          input.dataset.memberId = currentMemberRecord["Member ID"] ?? "";
+        }
+      }
+      if (relatedRecord) {
+        editingTungkulinIndex = relatedRecord.index;
+        populateMemberTungkulinForm(relatedRecord.record, tableFields);
+      } else {
+        editingTungkulinIndex = null;
+      }
       memberTungkulinModal.classList.add("is-visible");
+    };
+
+    const populateMemberTungkulinForm = (record, tableFields) => {
+      const memberRecords = loadMemberInfoRecords();
+      tableFields.forEach((field) => {
+        const fieldId = `tungkulin-${field.name.replace(/\\s+/g, "-").toLowerCase()}`;
+        const input = document.getElementById(fieldId);
+        if (!input) return;
+        const value = record[field.name] ?? "";
+        if (field.name === "Member") {
+          const memberId = record.__memberId ?? "";
+          const matched = memberRecords.find((item) => item["Member ID"] === memberId);
+          input.value = matched ? getMemberDisplayName(matched) : value;
+          input.dataset.memberId = memberId;
+          return;
+        }
+        input.value = value;
+      });
     };
 
     const buildTungkulinFieldInput = (field) => {
@@ -2390,7 +2437,10 @@
         row.addEventListener("click", () => {
           const memberId = row.dataset.memberId;
           const input = document.getElementById(fieldId);
-          if (input) input.value = memberId;
+          if (input) {
+            input.value = getMemberDisplayName(records.find((record) => record["Member ID"] === memberId) || {});
+            input.dataset.memberId = memberId;
+          }
           memberSearchModal.classList.remove("is-visible");
         });
       });
@@ -2517,13 +2567,24 @@
         const fieldId = `tungkulin-${field.name.replace(/\\s+/g, "-").toLowerCase()}`;
         const input = document.getElementById(fieldId);
         if (!input) return;
+        if (field.name === "Member") {
+          newRecord[field.name] = input.value ?? "";
+          if (input.dataset.memberId) {
+            newRecord.__memberId = input.dataset.memberId;
+          }
+          return;
+        }
         newRecord[field.name] = input.value ?? "";
       });
-      if (currentMemberRecord) {
-        newRecord.Member = currentMemberRecord["Member ID"] ?? "";
-      }
       memberTungkulinRecords = loadMemberTungkulinRecords();
-      memberTungkulinRecords.unshift(newRecord);
+      if (currentMemberRecord) {
+        newRecord.__memberId = newRecord.__memberId ?? currentMemberRecord["Member ID"] ?? "";
+      }
+      if (editingTungkulinIndex !== null) {
+        memberTungkulinRecords[editingTungkulinIndex] = newRecord;
+      } else {
+        memberTungkulinRecords.unshift(newRecord);
+      }
       saveMemberTungkulinRecords();
       memberTungkulinModal.classList.remove("is-visible");
       renderMemberTungkulinList();
@@ -2531,13 +2592,16 @@
 
     closeMemberTungkulin?.addEventListener("click", () => {
       memberTungkulinModal.classList.remove("is-visible");
+      editingTungkulinIndex = null;
     });
     cancelMemberTungkulin?.addEventListener("click", () => {
       memberTungkulinModal.classList.remove("is-visible");
+      editingTungkulinIndex = null;
     });
     memberTungkulinModal?.addEventListener("click", (event) => {
       if (event.target === memberTungkulinModal) {
         memberTungkulinModal.classList.remove("is-visible");
+        editingTungkulinIndex = null;
       }
     });
 
