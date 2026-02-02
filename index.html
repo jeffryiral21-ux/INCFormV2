@@ -582,6 +582,56 @@
       margin-top: 8px;
     }
 
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .icon-button {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .scrollable-table {
+      max-height: 320px;
+      overflow: auto;
+    }
+
+    .modal-form-wrapper {
+      max-height: 420px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .section-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .section-tabs button {
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .section-tabs button.active {
+      background: #1e40af;
+      color: #fff;
+      border-color: #1e40af;
+    }
+
     .modal-form label {
       font-size: 13px;
       color: #475569;
@@ -909,12 +959,42 @@
         <button type="button" class="modal-close" id="closeMemberInfoModal" aria-label="Close">×</button>
       </div>
       <form id="memberInfoForm">
-        <div class="modal-form" id="memberInfoFormFields"></div>
+        <div class="section-tabs" id="memberInfoSectionTabs"></div>
+        <div class="modal-form-wrapper">
+          <div class="modal-form" id="memberInfoFormFields"></div>
+        </div>
         <div class="modal-actions">
           <button type="button" class="ghost" id="cancelMemberInfo">Cancel</button>
           <button type="submit" class="primary">Save</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="memberInfoColumnsModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memberInfoColumnsTitle">
+      <div class="modal-header">
+        <h4 id="memberInfoColumnsTitle">Select Columns</h4>
+        <button type="button" class="modal-close" id="closeMemberInfoColumns" aria-label="Close">×</button>
+      </div>
+      <div class="modal-form" style="grid-template-columns: 1fr auto 1fr;">
+        <div>
+          <label>Available</label>
+          <select id="availableColumns" size="8" style="width:100%;"></select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;justify-content:center;">
+          <button type="button" class="ghost" id="addColumn">→</button>
+          <button type="button" class="ghost" id="removeColumn">←</button>
+        </div>
+        <div>
+          <label>Selected</label>
+          <select id="selectedColumns" size="8" style="width:100%;"></select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="ghost" id="cancelMemberInfoColumns">Cancel</button>
+        <button type="button" class="primary" id="saveMemberInfoColumns">Save</button>
+      </div>
     </div>
   </div>
 
@@ -950,6 +1030,15 @@
     const cancelMemberInfo = document.getElementById("cancelMemberInfo");
     const memberInfoForm = document.getElementById("memberInfoForm");
     const memberInfoFormFields = document.getElementById("memberInfoFormFields");
+    const memberInfoSectionTabs = document.getElementById("memberInfoSectionTabs");
+    const memberInfoColumnsModal = document.getElementById("memberInfoColumnsModal");
+    const closeMemberInfoColumns = document.getElementById("closeMemberInfoColumns");
+    const cancelMemberInfoColumns = document.getElementById("cancelMemberInfoColumns");
+    const saveMemberInfoColumns = document.getElementById("saveMemberInfoColumns");
+    const availableColumns = document.getElementById("availableColumns");
+    const selectedColumns = document.getElementById("selectedColumns");
+    const addColumn = document.getElementById("addColumn");
+    const removeColumn = document.getElementById("removeColumn");
     const contentMap = {
       forms: document.getElementById("formsContent"),
       reports: document.getElementById("reportsContent"),
@@ -957,6 +1046,7 @@
       tables: document.getElementById("tablesContent"),
     };
     const MEMBER_INFO_STORAGE_KEY = "incform_member_info_records";
+    const MEMBER_INFO_COLUMNS_KEY = "incform_member_info_columns";
     const defaultMemberInfoRecords = [
       {
         "Member ID": "MI-001",
@@ -1075,6 +1165,8 @@
       filterValue: null,
       sort: { field: null, direction: "asc" },
     };
+    let selectedRecordIndexes = new Set();
+    let editingRecordIndex = null;
 
     const renderMemberInfoList = (contentArea) => {
       tablesData = loadTablesData();
@@ -1085,32 +1177,46 @@
       const tableFields = memberInfoTable?.fields ?? [];
       const hasFields = tableFields.length > 0;
       if (memberInfoViewState.visibleColumns.size === 0 && hasFields) {
-        tableFields.forEach((field) => memberInfoViewState.visibleColumns.add(field.name));
+        const savedColumns = localStorage.getItem(MEMBER_INFO_COLUMNS_KEY);
+        if (savedColumns) {
+          try {
+            JSON.parse(savedColumns).forEach((name) => memberInfoViewState.visibleColumns.add(name));
+          } catch {
+            tableFields.forEach((field) => memberInfoViewState.visibleColumns.add(field.name));
+          }
+        } else {
+          tableFields.forEach((field) => memberInfoViewState.visibleColumns.add(field.name));
+        }
       }
       const visibleFields = tableFields.filter((field) =>
         memberInfoViewState.visibleColumns.has(field.name),
       );
 
-      const filteredRecords = memberInfoRecords.filter((record) => {
-        if (!memberInfoViewState.filterField || !memberInfoViewState.filterValue) return true;
-        return (
-          String(record[memberInfoViewState.filterField] ?? "") ===
-          memberInfoViewState.filterValue
-        );
-      });
+      const filteredRecords = memberInfoRecords
+        .map((record, index) => ({ record, index }))
+        .filter(({ record }) => {
+          if (!memberInfoViewState.filterField || !memberInfoViewState.filterValue) return true;
+          return (
+            String(record[memberInfoViewState.filterField] ?? "") ===
+            memberInfoViewState.filterValue
+          );
+        });
 
       const sortedRecords = [...filteredRecords];
       if (memberInfoViewState.sort.field) {
         const { field, direction } = memberInfoViewState.sort;
         sortedRecords.sort((a, b) => {
-          const valueA = String(a[field] ?? "");
-          const valueB = String(b[field] ?? "");
+          const valueA = String(a.record[field] ?? "");
+          const valueB = String(b.record[field] ?? "");
           return direction === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
         });
       }
 
       contentArea.innerHTML = `
-        <strong>Member Information selected.</strong>
+        <div class="list-header">
+          <strong>Member Information selected.</strong>
+          <button type="button" class="icon-button" id="memberInfoColumnsButton">⚙</button>
+        </div>
         <div class="content-area" style="margin-top: 16px;">
           <strong>Source table:</strong>
           ${memberInfoTable ? memberInfoTable.name : "Not found"}
@@ -1125,35 +1231,12 @@
           <button type="button" class="primary" id="newMemberInfo" ${
             memberInfoTable ? "" : "disabled"
           }>New</button>
-          <button type="button" class="secondary" disabled>Delete</button>
+          <button type="button" class="secondary" id="deleteMemberInfo" disabled>Delete</button>
           <button type="button" class="ghost" disabled>Edit</button>
         </div>
         ${
           memberInfoTable
             ? `
-              <div class="list-controls">
-                ${visibleFields
-                  .map(
-                    (field) => `
-                      <label>
-                        <input type="checkbox" data-column-toggle="${field.name}" checked />
-                        ${field.name}
-                      </label>
-                    `,
-                  )
-                  .join("")}
-                ${tableFields
-                  .filter((field) => !memberInfoViewState.visibleColumns.has(field.name))
-                  .map(
-                    (field) => `
-                      <label>
-                        <input type="checkbox" data-column-toggle="${field.name}" />
-                        ${field.name}
-                      </label>
-                    `,
-                  )
-                  .join("")}
-              </div>
               <div class="list-controls"></div>
               <div class="list-menu" id="memberInfoListMenu">
                 <button type="button" data-action="asc">Ascending</button>
@@ -1170,10 +1253,11 @@
                   </label>
                 </div>
               </div>
-              <div class="table-list" style="margin-top: 12px;">
+              <div class="table-list scrollable-table" style="margin-top: 12px;">
                 <table>
                   <thead>
                     <tr>
+                      <th></th>
                       ${
                         visibleFields.length
                           ? visibleFields
@@ -1193,8 +1277,9 @@
                       visibleFields.length
                         ? sortedRecords
                             .map(
-                              (record) => `
+                              ({ record, index }) => `
                                 <tr>
+                                  <td><input type="checkbox" class="record-select" data-index="${index}" /></td>
                                   ${visibleFields
                                     .map((field) => {
                                       const value = record[field.name] ?? "";
@@ -1227,17 +1312,52 @@
         newButton.addEventListener("click", () => openMemberInfoModal(memberInfoKey));
       }
 
-      contentArea.querySelectorAll("[data-column-toggle]").forEach((checkbox) => {
-        checkbox.addEventListener("change", (event) => {
-          const fieldName = event.target.dataset.columnToggle;
-          if (event.target.checked) {
-            memberInfoViewState.visibleColumns.add(fieldName);
-          } else {
-            memberInfoViewState.visibleColumns.delete(fieldName);
-          }
+      const deleteButton = contentArea.querySelector("#deleteMemberInfo");
+      if (deleteButton) {
+        deleteButton.disabled = selectedRecordIndexes.size === 0;
+        deleteButton.addEventListener("click", () => {
+          if (selectedRecordIndexes.size === 0) return;
+          memberInfoRecords = memberInfoRecords.filter(
+            (_, index) => !selectedRecordIndexes.has(index),
+          );
+          selectedRecordIndexes = new Set();
+          saveMemberInfoRecords();
           renderMemberInfoList(contentArea);
         });
+      }
+
+      contentArea.querySelectorAll(".record-select").forEach((checkbox) => {
+        checkbox.addEventListener("change", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (event.target.checked) {
+            selectedRecordIndexes.add(index);
+          } else {
+            selectedRecordIndexes.delete(index);
+          }
+          const deleteBtn = contentArea.querySelector("#deleteMemberInfo");
+          if (deleteBtn) {
+            deleteBtn.disabled = selectedRecordIndexes.size === 0;
+          }
+        });
       });
+
+      contentArea.querySelectorAll("tbody tr").forEach((row, rowIndex) => {
+        row.addEventListener("click", (event) => {
+          if (event.target.matches("input")) return;
+          const recordData = sortedRecords[rowIndex];
+          if (!recordData) return;
+          editingRecordIndex = recordData.index;
+          openMemberInfoModal(memberInfoKey);
+          populateMemberInfoForm(recordData.record, tableFields);
+        });
+      });
+
+      const columnsButton = contentArea.querySelector("#memberInfoColumnsButton");
+      if (columnsButton) {
+        columnsButton.addEventListener("click", () => {
+          openMemberInfoColumnsModal(tableFields);
+        });
+      }
 
       contentArea.querySelectorAll("[data-sort-field]").forEach((header) => {
         header.addEventListener("click", () => {
@@ -1269,35 +1389,33 @@
             }
             if (action === "filter") {
               filterControls.style.display = "block";
-              filterFieldSelect.innerHTML = tableFields
-                .map((field) => `<option value="${field.name}">${field.name}</option>`)
-                .join("");
-              filterFieldSelect.value = fieldName || tableFields[0]?.name || "";
+              filterFieldSelect.innerHTML = `<option value="${fieldName}">${fieldName}</option>`;
+              filterValueSelect.innerHTML = '<option value="">Select value</option>';
               const values = Array.from(
-                new Set(
-                  memberInfoRecords.map((record) => String(record[filterFieldSelect.value] ?? "")),
-                ),
+                new Set(memberInfoRecords.map((record) => String(record[fieldName] ?? ""))),
               ).filter((value) => value !== "");
-              filterValueSelect.innerHTML = values
-                .map((value) => `<option value="${value}">${value}</option>`)
-                .join("");
+              values.forEach((value) => {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = value;
+                filterValueSelect.appendChild(option);
+              });
+              const existingRun = filterControls.querySelector(".run-filter");
+              if (!existingRun) {
+                const runButton = document.createElement("button");
+                runButton.type = "button";
+                runButton.textContent = "Run";
+                runButton.style.marginTop = "8px";
+                runButton.className = "primary run-filter";
+                filterControls.appendChild(runButton);
+                runButton.addEventListener("click", () => {
+                  memberInfoViewState.filterField = filterFieldSelect.value;
+                  memberInfoViewState.filterValue = filterValueSelect.value;
+                  renderMemberInfoList(contentArea);
+                });
+              }
             }
           });
-        });
-
-        filterFieldSelect?.addEventListener("change", () => {
-          const values = Array.from(
-            new Set(memberInfoRecords.map((record) => String(record[filterFieldSelect.value] ?? ""))),
-          ).filter((value) => value !== "");
-          filterValueSelect.innerHTML = values
-            .map((value) => `<option value="${value}">${value}</option>`)
-            .join("");
-        });
-
-        filterValueSelect?.addEventListener("change", () => {
-          memberInfoViewState.filterField = filterFieldSelect.value;
-          memberInfoViewState.filterValue = filterValueSelect.value;
-          renderMemberInfoList(contentArea);
         });
 
         window.addEventListener(
@@ -1735,23 +1853,36 @@
         if (!sections[sectionName]) sections[sectionName] = [];
         sections[sectionName].push(field);
       });
-      memberInfoFormFields.innerHTML = Object.entries(sections)
+      const sectionNames = Object.keys(sections);
+      let activeSection = sectionNames[0] || "General";
+      memberInfoSectionTabs.innerHTML = sectionNames
         .map(
-          ([sectionName, fields]) => `
-            <div class="modal-section">${sectionName}</div>
-            ${fields.map((field) => buildFieldInput(field)).join("")}
-          `,
+          (section) =>
+            `<button type="button" class="${section === activeSection ? "active" : ""}" data-section="${section}">${section}</button>`,
         )
         .join("");
+      memberInfoFormFields.innerHTML = tableFields
+        .map((field) => {
+          const section = field.section?.trim() || "General";
+          return buildFieldInput(field).replace(
+            'class="modal-field"',
+            `class="modal-field" data-section="${section}"`,
+          );
+        })
+        .join("");
+      setActiveSection(activeSection);
       attachFieldBehaviors(tableFields);
       memberInfoModal.classList.add("is-visible");
+      setSaveEnabled(false);
     };
 
     const closeMemberInfoModalView = () => {
       memberInfoModal.classList.remove("is-visible");
       memberInfoForm.reset();
       memberInfoFormFields.innerHTML = "";
+      memberInfoSectionTabs.innerHTML = "";
       cropperState = null;
+      editingRecordIndex = null;
     };
 
     const buildFieldInput = (field) => {
@@ -1813,7 +1944,7 @@
       if (field.type === "Checkbox") {
         return `
           <div class="modal-field" draggable="true" data-field-name="${field.name}">
-            <label>
+            <label for="${fieldId}">
               <input type="checkbox" id="${fieldId}" data-field="${field.name}" />
               ${field.name}
             </label>
@@ -1937,7 +2068,118 @@
           openMemberInfoModal(memberInfoKey);
         });
       });
+
+      memberInfoSectionTabs.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          setActiveSection(button.dataset.section);
+        });
+      });
+
+      memberInfoFormFields.querySelectorAll("input, select").forEach((input) => {
+        input.addEventListener("input", () => setSaveEnabled(true));
+        input.addEventListener("change", () => setSaveEnabled(true));
+      });
     };
+
+    const setActiveSection = (section) => {
+      memberInfoSectionTabs.querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.section === section);
+      });
+      memberInfoFormFields.querySelectorAll(".modal-field").forEach((field) => {
+        field.style.display =
+          field.dataset.section === section ? "block" : "none";
+      });
+    };
+
+    const setSaveEnabled = (enabled) => {
+      const saveButton = memberInfoForm.querySelector("button[type=\"submit\"]");
+      if (saveButton) saveButton.disabled = !enabled;
+    };
+
+    const populateMemberInfoForm = (record, tableFields) => {
+      tableFields.forEach((field) => {
+        const fieldId = `member-${field.name.replace(/\s+/g, "-").toLowerCase()}`;
+        const input = document.getElementById(fieldId);
+        if (!input) return;
+        const value = record[field.name] ?? "";
+        if (field.type === "Checkbox") {
+          input.checked = value === "Yes" || value === true;
+          return;
+        }
+        if (field.type === "Image" && value) {
+          const cropper = memberInfoFormFields.querySelector(`[data-cropper="${fieldId}"]`);
+          const canvas = cropper?.querySelector("canvas");
+          const ctx = canvas?.getContext("2d");
+          if (canvas && ctx) {
+            const img = new Image();
+            img.onload = () => {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = value;
+          }
+          return;
+        }
+        input.value = value;
+      });
+      setSaveEnabled(false);
+    };
+
+    const openMemberInfoColumnsModal = (tableFields) => {
+      if (!memberInfoColumnsModal) return;
+      availableColumns.innerHTML = "";
+      selectedColumns.innerHTML = "";
+      const selected = Array.from(memberInfoViewState.visibleColumns);
+      tableFields.forEach((field) => {
+        const option = document.createElement("option");
+        option.value = field.name;
+        option.textContent = field.name;
+        if (selected.includes(field.name)) {
+          selectedColumns.appendChild(option);
+        } else {
+          availableColumns.appendChild(option);
+        }
+      });
+      memberInfoColumnsModal.classList.add("is-visible");
+    };
+
+    const closeMemberInfoColumnsModal = () => {
+      memberInfoColumnsModal.classList.remove("is-visible");
+    };
+
+    closeMemberInfoColumns?.addEventListener("click", closeMemberInfoColumnsModal);
+    cancelMemberInfoColumns?.addEventListener("click", closeMemberInfoColumnsModal);
+    memberInfoColumnsModal?.addEventListener("click", (event) => {
+      if (event.target === memberInfoColumnsModal) {
+        closeMemberInfoColumnsModal();
+      }
+    });
+
+    saveMemberInfoColumns?.addEventListener("click", () => {
+      memberInfoViewState.visibleColumns = new Set(
+        Array.from(selectedColumns.options).map((option) => option.value),
+      );
+      localStorage.setItem(
+        MEMBER_INFO_COLUMNS_KEY,
+        JSON.stringify(Array.from(memberInfoViewState.visibleColumns)),
+      );
+      closeMemberInfoColumnsModal();
+      renderMemberInfoList(contentMap.records);
+    });
+
+    const moveSelectedOptions = (fromSelect, toSelect) => {
+      Array.from(fromSelect.selectedOptions).forEach((option) => {
+        toSelect.appendChild(option);
+      });
+    };
+
+    addColumn?.addEventListener("click", () => {
+      moveSelectedOptions(availableColumns, selectedColumns);
+    });
+
+    removeColumn?.addEventListener("click", () => {
+      moveSelectedOptions(selectedColumns, availableColumns);
+    });
 
     closeMemberInfoModal.addEventListener("click", closeMemberInfoModalView);
     cancelMemberInfo.addEventListener("click", closeMemberInfoModalView);
@@ -1975,7 +2217,11 @@
         }
         newRecord[field.name] = input.value ?? "";
       });
-      memberInfoRecords.unshift(newRecord);
+      if (editingRecordIndex !== null) {
+        memberInfoRecords[editingRecordIndex] = newRecord;
+      } else {
+        memberInfoRecords.unshift(newRecord);
+      }
       saveMemberInfoRecords();
       renderMemberInfoList(contentMap.records);
       closeMemberInfoModalView();
