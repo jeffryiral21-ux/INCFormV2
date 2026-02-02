@@ -1,0 +1,2611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INC Data Management System</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f6fb;
+      --panel: #ffffff;
+      --primary: #1c3faa;
+      --primary-dark: #142f7c;
+      --muted: #6b7280;
+      --border: #e2e8f0;
+      --accent: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: #111827;
+    }
+
+    .login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1c3faa 0%, #4267d1 50%, #6fa4ff 100%);
+      padding: 24px;
+    }
+
+    .login-card {
+      width: min(420px, 100%);
+      background: var(--panel);
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 24px 40px rgba(15, 23, 42, 0.2);
+    }
+
+    .login-card h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .login-card p {
+      margin: 0 0 24px;
+      color: var(--muted);
+    }
+
+    .login-card label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    .login-card input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .login-card button {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .login-card button:hover {
+      background: var(--primary-dark);
+    }
+
+    .app {
+      display: none;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 12px;
+      padding: 12px 32px;
+      background: #0f172a;
+    }
+
+    .nav-item {
+      position: relative;
+    }
+
+    .nav button {
+      background: transparent;
+      border: none;
+      color: #cbd5f5;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .nav button.active {
+      background: #1e40af;
+      color: #fff;
+    }
+
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 220px;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+      padding: 8px;
+      display: none;
+      z-index: 10;
+    }
+
+    .dropdown button {
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #0f172a;
+      background: transparent;
+    }
+
+    .dropdown button.active {
+      background: #e0e7ff;
+      color: var(--primary);
+    }
+
+    .nav-item:hover .dropdown,
+    .nav-item:focus-within .dropdown {
+      display: block;
+    }
+
+    main {
+      padding: 24px 32px 48px;
+    }
+
+    .panel {
+      background: var(--panel);
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    .section-title {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .section-subtitle {
+      margin: 0 0 20px;
+      color: var(--muted);
+    }
+
+    .submenu {
+      display: none;
+    }
+
+    .submenu button {
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      cursor: pointer;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .table-actions button {
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, #1c3faa, #355dd6);
+      box-shadow: 0 8px 16px rgba(28, 63, 170, 0.24);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border-radius: 999px;
+      color: #fff;
+    }
+
+    button.primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(28, 63, 170, 0.32);
+    }
+
+    .table-config .primary {
+      border-radius: 999px;
+      color: #fff;
+      padding: 10px 22px;
+    }
+
+    .table-actions button:disabled {
+      background: #cbd5f5;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    .table-actions button.secondary {
+      background: #f97316;
+    }
+
+    .table-actions button.ghost {
+      background: #334155;
+    }
+
+    .rounded-actions button {
+      border-radius: 999px;
+    }
+
+    .table-list {
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .table-list table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table-list th,
+    .table-list td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .table-list th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 600;
+    }
+
+    .table-list tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table-name {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .table-name:hover {
+      text-decoration: underline;
+    }
+
+    .tables-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 24px;
+      margin-top: 16px;
+      align-items: start;
+    }
+
+    .table-config {
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      min-height: 200px;
+    }
+
+    .table-config h4 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: #0f172a;
+    }
+
+    .table-config-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .table-config-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .table-config-status {
+      font-size: 12px;
+      color: #16a34a;
+    }
+
+    .table-config form {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .choice-field {
+      display: none;
+    }
+
+    .choice-field.is-visible {
+      display: block;
+    }
+
+    .reference-field {
+      display: none;
+    }
+
+    .reference-field.is-visible {
+      display: block;
+    }
+
+    .table-config label {
+      font-size: 13px;
+      color: #475569;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .table-config input,
+    .table-config select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .field-actions {
+      display: flex;
+      gap: 12px;
+      margin: 16px 0 12px;
+    }
+
+    .field-actions button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      background: #334155;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .field-actions button:disabled {
+      background: #cbd5f5;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    .field-list table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .field-list .field-list-hint {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #1f2937;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .field-list th,
+    .field-list td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .field-list input,
+    .field-list select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .field-list th {
+      background: #f8fafc;
+      color: #475569;
+    }
+
+    .field-row {
+      cursor: grab;
+    }
+
+    .field-row.is-dragging {
+      opacity: 0.6;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 24px;
+    }
+
+    .modal-backdrop.is-visible {
+      display: flex;
+    }
+
+    .modal {
+      width: min(900px, 100%);
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 50px rgba(15, 23, 42, 0.2);
+      padding: 24px;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .modal-header h4 {
+      margin: 0;
+    }
+
+    .modal-close {
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .modal-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .modal-field {
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px dashed transparent;
+      background: #fff;
+    }
+
+    .modal-field.is-dragging {
+      border-color: #94a3b8;
+      background: #f1f5f9;
+      opacity: 0.7;
+    }
+
+    .modal-section {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    .list-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .list-controls label {
+      font-size: 12px;
+      color: #475569;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .list-controls input[type="text"] {
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .list-menu {
+      position: absolute;
+      z-index: 60;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+      padding: 12px;
+      display: none;
+      min-width: 220px;
+    }
+
+    .list-menu.is-visible {
+      display: block;
+    }
+
+    .list-menu button {
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .list-menu button:hover {
+      background: #f1f5f9;
+    }
+
+    .list-menu label {
+      font-size: 12px;
+      color: #475569;
+      display: block;
+      margin-top: 8px;
+    }
+
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .icon-button {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .scrollable-table {
+      max-height: 320px;
+      overflow: auto;
+    }
+
+    .modal-form-wrapper {
+      max-height: 420px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .section-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .section-tabs button {
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .section-tabs button.active {
+      background: #1e40af;
+      color: #fff;
+      border-color: #1e40af;
+    }
+
+    .modal-form label {
+      font-size: 13px;
+      color: #475569;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .modal-form input,
+    .modal-form select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .modal-footer-list {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .search-button {
+      margin-left: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .cropper {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+
+    .cropper canvas {
+      width: 200px;
+      height: 200px;
+      display: block;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      background: #fff;
+    }
+
+    .cropper-controls {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .content-area {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      background: #f8fafc;
+      color: var(--muted);
+    }
+
+    .content-area strong {
+      color: #0f172a;
+    }
+
+    .content-area ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: #475569;
+    }
+
+    .signout {
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      color: #1f2937;
+    }
+
+    @media (max-width: 900px) {
+      header,
+      .nav,
+      main {
+        padding-inline: 16px;
+      }
+
+      .nav {
+        overflow-x: auto;
+      }
+
+      .tables-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <h1>INC Data Management</h1>
+      <p>Sign in to access the stand-alone data management system.</p>
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="Enter username" />
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter password" />
+      <button type="button" id="loginButton">Log in</button>
+    </div>
+  </div>
+
+  <div class="app" id="app">
+    <header>
+      <h2>Stand-Alone Data Management System</h2>
+      <button class="signout" id="signOut">Sign out</button>
+    </header>
+
+    <nav class="nav" id="mainNav">
+      <div class="nav-item">
+        <button type="button" data-tab="home" class="active">Home</button>
+      </div>
+      <div class="nav-item">
+        <button type="button" data-tab="forms">Forms</button>
+        <div class="dropdown" data-submenu="forms">
+          <button type="button" class="active">R5-04</button>
+          <button type="button">R5-15</button>
+          <button type="button">R5-18</button>
+          <button type="button">Deliberasyon</button>
+          <button type="button">Oathtaking</button>
+          <button type="button">Seminar</button>
+        </div>
+      </div>
+      <div class="nav-item">
+        <button type="button" data-tab="reports">Reports</button>
+        <div class="dropdown" data-submenu="reports">
+          <button type="button" class="active">R5-03</button>
+          <button type="button">R5-14</button>
+          <button type="button">Master List</button>
+        </div>
+      </div>
+      <div class="nav-item">
+        <button type="button" data-tab="records">Record Management</button>
+        <div class="dropdown" data-submenu="records">
+          <button type="button" class="active">New Member Record</button>
+          <button type="button">Modify Member Record</button>
+          <button type="button" data-records-view="member-info">Member Information</button>
+          <button type="button">Member Tungkulin Information</button>
+          <button type="button">Find Missing Control Sequence</button>
+          <button type="button">Override Control Number Assignment</button>
+          <button type="button">Find Duplicate Control Number Assignment</button>
+          <button type="button">Signatories</button>
+          <button type="button">Tugkulin Information</button>
+          <button type="button">Kapisanan Groups</button>
+        </div>
+      </div>
+      <div class="nav-item">
+        <button type="button" data-tab="tables">Table Management</button>
+        <div class="dropdown" data-submenu="tables">
+          <button type="button" class="active">View Tables</button>
+        </div>
+      </div>
+      <div class="nav-item">
+        <button type="button" data-tab="access">Access Management</button>
+      </div>
+    </nav>
+
+    <main>
+      <section class="panel" id="home" data-panel>
+        <h3 class="section-title">Welcome Home</h3>
+        <p class="section-subtitle">Select a module from the navigation bar to begin.</p>
+        <div class="content-area">
+          <strong>System Overview</strong>
+          <ul>
+            <li>Recent activity, alerts, and approvals will appear here.</li>
+            <li>Quick access shortcuts will be added to the top row.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel" id="forms" data-panel hidden>
+        <h3 class="section-title">Forms Module</h3>
+        <p class="section-subtitle">Select the form set you want to manage.</p>
+        <div class="content-area" id="formsContent">
+          <strong>R5-04 selected.</strong>
+          <ul>
+            <li>Capture new submissions, attachments, and approvals for this form.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel" id="reports" data-panel hidden>
+        <h3 class="section-title">Reports Module</h3>
+        <p class="section-subtitle">Access report generation and exports.</p>
+        <div class="content-area" id="reportsContent">
+          <strong>R5-03 selected.</strong>
+          <ul>
+            <li>Preview summarized outputs and export to PDF/CSV.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel" id="records" data-panel hidden>
+        <h3 class="section-title">Record Management</h3>
+        <p class="section-subtitle">Manage member records and control sequences.</p>
+        <div class="content-area" id="recordsContent">
+          <strong>New Member Record selected.</strong>
+          <ul>
+            <li>Start a new profile and assign a control number.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="panel" id="tables" data-panel hidden>
+        <h3 class="section-title">Table Management</h3>
+        <p class="section-subtitle">Manage lookup tables and data definitions.</p>
+        <div class="tables-layout">
+          <div>
+            <div class="table-actions">
+              <button type="button" class="primary" id="newTable">New</button>
+              <button type="button" class="secondary" id="deleteTable" disabled>Delete</button>
+              <button type="button" class="ghost" id="cloneTable" disabled>Clone</button>
+            </div>
+            <div class="table-list">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Select</th>
+                    <th>Name</th>
+                  </tr>
+                </thead>
+                <tbody id="tableListBody"></tbody>
+              </table>
+            </div>
+            <div class="content-area" id="tablesContent">
+              <strong>View Tables selected.</strong>
+              <ul>
+                <li>Search, filter, and manage lookup tables for the system.</li>
+              </ul>
+            </div>
+          </div>
+          <section class="table-config" id="tableConfig" hidden>
+            <div class="table-config-header">
+              <h4 id="tableConfigTitle">Table Configuration</h4>
+              <div class="table-config-actions">
+                <button type="button" class="primary" id="updateTableConfig">Update</button>
+                <span class="table-config-status" id="tableConfigStatus" aria-live="polite"></span>
+              </div>
+            </div>
+            <form id="tableNameForm">
+              <div>
+                <label for="tableNameInput">Edit table name</label>
+                <input type="text" id="tableNameInput" placeholder="Table name" />
+              </div>
+            </form>
+            <form id="fieldForm">
+              <div>
+                <label for="fieldNameInput">Field Name</label>
+                <input type="text" id="fieldNameInput" placeholder="Enter field name" required />
+              </div>
+              <div>
+                <label for="fieldTypeSelect">Type</label>
+                <select id="fieldTypeSelect" required>
+                  <option value="">Select type</option>
+                  <option value="String">String</option>
+                  <option value="Choice">Choice</option>
+                  <option value="Date">Date</option>
+                  <option value="Image">Image</option>
+                  <option value="Checkbox">Checkbox</option>
+                  <option value="Number">Number</option>
+                  <option value="Reference">Reference</option>
+                </select>
+              </div>
+              <div class="choice-field" id="choiceField">
+                <label for="choiceInput">Choices</label>
+                <input
+                  type="text"
+                  id="choiceInput"
+                  placeholder="Enter choices separated by commas"
+                />
+              </div>
+              <div class="reference-field" id="referenceField">
+                <label for="referenceTableSelect">Reference Table</label>
+                <select id="referenceTableSelect">
+                  <option value="">Select a table</option>
+                </select>
+              </div>
+              <button type="submit" class="primary">Add Field</button>
+            </form>
+            <div class="field-actions">
+              <button type="button" id="deleteField" disabled>Delete</button>
+              <button type="button" id="cloneField" disabled>Clone</button>
+            </div>
+            <div class="field-list">
+              <p class="field-list-hint">Columns: Select, Field Name, Type, Choice List, Reference</p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Select</th>
+                    <th>Field Name</th>
+                    <th>Type</th>
+                    <th>Choice List</th>
+                    <th>Reference</th>
+                    <th>Section</th>
+                  </tr>
+                </thead>
+                <tbody id="fieldListBody"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="panel" id="access" data-panel hidden>
+        <h3 class="section-title">Access Management</h3>
+        <p class="section-subtitle">Assign access levels, roles, and permissions.</p>
+        <div class="content-area">
+          <strong>Access configuration is pending.</strong>
+          <ul>
+            <li>Define roles, permissions, and approval chains here.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="memberInfoModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memberInfoModalTitle">
+      <div class="modal-header">
+        <h4 id="memberInfoModalTitle">New Member Information</h4>
+        <button type="button" class="modal-close" id="closeMemberInfoModal" aria-label="Close">×</button>
+      </div>
+      <form id="memberInfoForm">
+        <div class="section-tabs" id="memberInfoSectionTabs"></div>
+        <div class="modal-form-wrapper">
+          <div class="modal-form" id="memberInfoFormFields"></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="ghost" id="cancelMemberInfo">Cancel</button>
+          <button type="submit" class="primary">Save</button>
+        </div>
+        <div class="modal-footer-list" id="memberTungkulinListSection" hidden>
+          <div class="list-header">
+            <strong>Member Tungkulin Information</strong>
+          </div>
+          <div class="table-actions rounded-actions" style="margin-top: 12px;">
+            <button type="button" class="primary" id="newMemberTungkulin">New</button>
+            <button type="button" class="secondary" id="deleteMemberTungkulin" disabled>Delete</button>
+          </div>
+          <div class="table-list scrollable-table" style="margin-top: 12px;">
+            <table>
+              <thead id="memberTungkulinListHead"></thead>
+              <tbody id="memberTungkulinListBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="memberInfoColumnsModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memberInfoColumnsTitle">
+      <div class="modal-header">
+        <h4 id="memberInfoColumnsTitle">Select Columns</h4>
+        <button type="button" class="modal-close" id="closeMemberInfoColumns" aria-label="Close">×</button>
+      </div>
+      <div class="modal-form" style="grid-template-columns: 1fr auto 1fr;">
+        <div>
+          <label>Available</label>
+          <select id="availableColumns" size="8" style="width:100%;"></select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;justify-content:center;">
+          <button type="button" class="ghost" id="addColumn">→</button>
+          <button type="button" class="ghost" id="removeColumn">←</button>
+        </div>
+        <div>
+          <label>Selected</label>
+          <select id="selectedColumns" size="8" style="width:100%;"></select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="ghost" id="cancelMemberInfoColumns">Cancel</button>
+        <button type="button" class="primary" id="saveMemberInfoColumns">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="memberTungkulinModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memberTungkulinTitle">
+      <div class="modal-header">
+        <h4 id="memberTungkulinTitle">New Member Tungkulin</h4>
+        <button type="button" class="modal-close" id="closeMemberTungkulin" aria-label="Close">×</button>
+      </div>
+      <form id="memberTungkulinForm">
+        <div class="modal-form" id="memberTungkulinFields"></div>
+        <div class="modal-actions">
+          <button type="button" class="ghost" id="cancelMemberTungkulin">Cancel</button>
+          <button type="submit" class="primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="memberSearchModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memberSearchTitle">
+      <div class="modal-header">
+        <h4 id="memberSearchTitle">Select Member</h4>
+        <button type="button" class="modal-close" id="closeMemberSearch" aria-label="Close">×</button>
+      </div>
+      <div class="table-list scrollable-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Registry Number</th>
+              <th>Full Name</th>
+            </tr>
+          </thead>
+          <tbody id="memberSearchBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const loginScreen = document.getElementById("loginScreen");
+    const app = document.getElementById("app");
+    const loginButton = document.getElementById("loginButton");
+    const signOutButton = document.getElementById("signOut");
+    const navButtons = document.querySelectorAll("#mainNav button");
+    const panels = document.querySelectorAll("[data-panel]");
+    const submenuGroups = document.querySelectorAll(".dropdown[data-submenu]");
+    const newTableButton = document.getElementById("newTable");
+    const deleteButton = document.getElementById("deleteTable");
+    const cloneButton = document.getElementById("cloneTable");
+    const tableListBody = document.getElementById("tableListBody");
+    const tableConfig = document.getElementById("tableConfig");
+    const tableConfigTitle = document.getElementById("tableConfigTitle");
+    const updateTableConfigButton = document.getElementById("updateTableConfig");
+    const tableConfigStatus = document.getElementById("tableConfigStatus");
+    const tableNameInput = document.getElementById("tableNameInput");
+    const fieldForm = document.getElementById("fieldForm");
+    const fieldNameInput = document.getElementById("fieldNameInput");
+    const fieldTypeSelect = document.getElementById("fieldTypeSelect");
+    const choiceField = document.getElementById("choiceField");
+    const choiceInput = document.getElementById("choiceInput");
+    const referenceField = document.getElementById("referenceField");
+    const referenceTableSelect = document.getElementById("referenceTableSelect");
+    const fieldListBody = document.getElementById("fieldListBody");
+    const deleteFieldButton = document.getElementById("deleteField");
+    const cloneFieldButton = document.getElementById("cloneField");
+    const memberInfoModal = document.getElementById("memberInfoModal");
+    const closeMemberInfoModal = document.getElementById("closeMemberInfoModal");
+    const cancelMemberInfo = document.getElementById("cancelMemberInfo");
+    const memberInfoForm = document.getElementById("memberInfoForm");
+    const memberInfoFormFields = document.getElementById("memberInfoFormFields");
+    const memberInfoSectionTabs = document.getElementById("memberInfoSectionTabs");
+    const memberInfoColumnsModal = document.getElementById("memberInfoColumnsModal");
+    const closeMemberInfoColumns = document.getElementById("closeMemberInfoColumns");
+    const cancelMemberInfoColumns = document.getElementById("cancelMemberInfoColumns");
+    const saveMemberInfoColumns = document.getElementById("saveMemberInfoColumns");
+    const availableColumns = document.getElementById("availableColumns");
+    const selectedColumns = document.getElementById("selectedColumns");
+    const addColumn = document.getElementById("addColumn");
+    const removeColumn = document.getElementById("removeColumn");
+    const memberTungkulinListSection = document.getElementById("memberTungkulinListSection");
+    const memberTungkulinListHead = document.getElementById("memberTungkulinListHead");
+    const memberTungkulinListBody = document.getElementById("memberTungkulinListBody");
+    const newMemberTungkulin = document.getElementById("newMemberTungkulin");
+    const deleteMemberTungkulin = document.getElementById("deleteMemberTungkulin");
+    const memberTungkulinModal = document.getElementById("memberTungkulinModal");
+    const closeMemberTungkulin = document.getElementById("closeMemberTungkulin");
+    const cancelMemberTungkulin = document.getElementById("cancelMemberTungkulin");
+    const memberTungkulinForm = document.getElementById("memberTungkulinForm");
+    const memberTungkulinFields = document.getElementById("memberTungkulinFields");
+    const memberSearchModal = document.getElementById("memberSearchModal");
+    const closeMemberSearch = document.getElementById("closeMemberSearch");
+    const memberSearchBody = document.getElementById("memberSearchBody");
+    const contentMap = {
+      forms: document.getElementById("formsContent"),
+      reports: document.getElementById("reportsContent"),
+      records: document.getElementById("recordsContent"),
+      tables: document.getElementById("tablesContent"),
+    };
+    const MEMBER_INFO_STORAGE_KEY = "incform_member_info_records";
+    const MEMBER_INFO_COLUMNS_KEY = "incform_member_info_columns";
+    const MEMBER_TUNGKULIN_STORAGE_KEY = "incform_member_tungkulin_records";
+    const defaultMemberInfoRecords = [
+      {
+        "Member ID": "MI-001",
+        Name: "Juan Dela Cruz",
+        Locale: "Central",
+        Status: "Active",
+      },
+      {
+        "Member ID": "MI-002",
+        Name: "Maria Santos",
+        Locale: "North",
+        Status: "Inactive",
+      },
+      {
+        "Member ID": "MI-003",
+        Name: "Jose Reyes",
+        Locale: "South",
+        Status: "Active",
+      },
+    ];
+    const tableRecords = {
+      membership: [
+        { id: "CAT-001", name: "Choir" },
+        { id: "CAT-002", name: "Finance" },
+      ],
+      locale: [
+        { id: "LOC-001", name: "Central" },
+        { id: "LOC-002", name: "North" },
+      ],
+    };
+
+    const showApp = () => {
+      loginScreen.style.display = "none";
+      app.style.display = "block";
+    };
+
+    const showLogin = () => {
+      app.style.display = "none";
+      loginScreen.style.display = "flex";
+    };
+
+    loginButton.addEventListener("click", showApp);
+    signOutButton.addEventListener("click", showLogin);
+
+    navButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        navButtons.forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
+
+        panels.forEach((panel) => {
+          panel.hidden = panel.id !== button.dataset.tab;
+        });
+      });
+    });
+
+    submenuGroups.forEach((submenu) => {
+      submenu.addEventListener("click", (event) => {
+        const target = event.target.closest("button");
+        if (!target) return;
+
+        submenu.querySelectorAll("button").forEach((btn) => {
+          btn.classList.toggle("active", btn === target);
+        });
+
+        const contentArea = contentMap[submenu.dataset.submenu];
+        if (!contentArea) return;
+
+        const parentButton = submenu.parentElement?.querySelector("button[data-tab]");
+        if (parentButton) {
+          parentButton.click();
+        }
+
+        if (
+          submenu.dataset.submenu === "records" &&
+          target.dataset.recordsView === "member-info"
+        ) {
+          renderMemberInfoList(contentArea);
+          return;
+        }
+
+        contentArea.innerHTML = `
+          <strong>${target.textContent} selected.</strong>
+          <ul>
+            <li>Continue workflow actions for ${target.textContent} in this space.</li>
+          </ul>
+        `;
+      });
+    });
+
+    const getTableKeyByName = (tableName) =>
+      Object.keys(tablesData).find((key) => tablesData[key]?.name === tableName);
+
+    const getTableByName = (tableName) => {
+      const key = getTableKeyByName(tableName);
+      return key ? tablesData[key] : null;
+    };
+
+    const loadMemberInfoRecords = () => {
+      const saved = localStorage.getItem(MEMBER_INFO_STORAGE_KEY);
+      if (!saved) return structuredClone(defaultMemberInfoRecords);
+      try {
+        return JSON.parse(saved);
+      } catch (error) {
+        console.warn("Failed to parse saved member records, reverting to defaults.", error);
+        return structuredClone(defaultMemberInfoRecords);
+      }
+    };
+
+    const saveMemberInfoRecords = () => {
+      localStorage.setItem(MEMBER_INFO_STORAGE_KEY, JSON.stringify(memberInfoRecords));
+    };
+
+    const loadMemberTungkulinRecords = () => {
+      const saved = localStorage.getItem(MEMBER_TUNGKULIN_STORAGE_KEY);
+      if (!saved) return [];
+      try {
+        return JSON.parse(saved);
+      } catch (error) {
+        console.warn("Failed to parse member tungkulin records, reverting to empty.", error);
+        return [];
+      }
+    };
+
+    const saveMemberTungkulinRecords = () => {
+      localStorage.setItem(MEMBER_TUNGKULIN_STORAGE_KEY, JSON.stringify(memberTungkulinRecords));
+    };
+
+    let memberInfoViewState = {
+      visibleColumns: new Set(),
+      filterField: null,
+      filterValue: null,
+      sort: { field: null, direction: "asc" },
+    };
+    let selectedRecordIndexes = new Set();
+    let editingRecordIndex = null;
+    let selectedTungkulinIndexes = new Set();
+    let editingTungkulinIndex = null;
+    let currentMemberRecord = null;
+    let memberTungkulinRecords = [];
+
+    const renderMemberInfoList = (contentArea) => {
+      tablesData = loadTablesData();
+      memberInfoRecords = loadMemberInfoRecords();
+      const memberInfoKey =
+        getTableKeyByName("Member Information") || (tablesData.member_info ? "member_info" : null);
+      const memberInfoTable = memberInfoKey ? tablesData[memberInfoKey] : null;
+      const tableFields = memberInfoTable?.fields ?? [];
+      const hasFields = tableFields.length > 0;
+      if (memberInfoViewState.visibleColumns.size === 0 && hasFields) {
+        const savedColumns = localStorage.getItem(MEMBER_INFO_COLUMNS_KEY);
+        if (savedColumns) {
+          try {
+            JSON.parse(savedColumns).forEach((name) => memberInfoViewState.visibleColumns.add(name));
+          } catch {
+            tableFields.forEach((field) => memberInfoViewState.visibleColumns.add(field.name));
+          }
+        } else {
+          tableFields.forEach((field) => memberInfoViewState.visibleColumns.add(field.name));
+        }
+      }
+      const visibleFields = tableFields.filter((field) =>
+        memberInfoViewState.visibleColumns.has(field.name),
+      );
+
+      const filteredRecords = memberInfoRecords
+        .map((record, index) => ({ record, index }))
+        .filter(({ record }) => {
+          if (!memberInfoViewState.filterField || !memberInfoViewState.filterValue) return true;
+          return (
+            String(record[memberInfoViewState.filterField] ?? "") ===
+            memberInfoViewState.filterValue
+          );
+        });
+
+      const sortedRecords = [...filteredRecords];
+      if (memberInfoViewState.sort.field) {
+        const { field, direction } = memberInfoViewState.sort;
+        sortedRecords.sort((a, b) => {
+          const valueA = String(a.record[field] ?? "");
+          const valueB = String(b.record[field] ?? "");
+          return direction === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+        });
+      }
+
+      contentArea.innerHTML = `
+        <div class="list-header">
+          <strong>Member Information selected.</strong>
+          <button type="button" class="icon-button" id="memberInfoColumnsButton">⚙</button>
+        </div>
+        <div class="content-area" style="margin-top: 16px;">
+          <strong>Source table:</strong>
+          ${memberInfoTable ? memberInfoTable.name : "Not found"}
+          <div style="margin-top: 8px;">
+            <span style="color:#64748b;">Fields:</span>
+            ${tableFields.length}
+            <span style="color:#64748b;margin-left:12px;">Last refresh:</span>
+            ${new Date().toLocaleTimeString()}
+          </div>
+        </div>
+        <div class="table-actions rounded-actions" style="margin-top: 16px;">
+          <button type="button" class="primary" id="newMemberInfo" ${
+            memberInfoTable ? "" : "disabled"
+          }>New</button>
+          <button type="button" class="secondary" id="deleteMemberInfo" disabled>Delete</button>
+          <button type="button" class="ghost" disabled>Edit</button>
+        </div>
+        ${
+          memberInfoTable
+            ? `
+              <div class="list-controls"></div>
+              <div class="list-menu" id="memberInfoListMenu">
+                <button type="button" data-action="asc">Ascending</button>
+                <button type="button" data-action="desc">Descending</button>
+                <button type="button" data-action="filter">Filter</button>
+                <div id="memberInfoFilterControls" style="display:none;">
+                  <label>
+                    Field
+                    <select id="memberInfoFilterField"></select>
+                  </label>
+                  <label>
+                    Value
+                    <select id="memberInfoFilterValue"></select>
+                  </label>
+                </div>
+              </div>
+              <div class="table-list scrollable-table" style="margin-top: 12px;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th></th>
+                      ${
+                        visibleFields.length
+                          ? visibleFields
+                              .map(
+                                (field) =>
+                                  `<th data-sort-field="${field.name}" style="cursor:pointer;">
+                                    ${field.name}
+                                  </th>`,
+                              )
+                              .join("")
+                          : ""
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${
+                      visibleFields.length
+                        ? sortedRecords
+                            .map(
+                              ({ record, index }) => `
+                                <tr>
+                                  <td><input type="checkbox" class="record-select" data-index="${index}" /></td>
+                                  ${visibleFields
+                                    .map((field) => {
+                                      const value = record[field.name] ?? "";
+                                      if (field.type === "Image" && value) {
+                                        return `<td><img src="${value}" alt="${field.name}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid #e2e8f0;" /></td>`;
+                                      }
+                                      return `<td>${value}</td>`;
+                                    })
+                                    .join("")}
+                                </tr>
+                              `,
+                            )
+                            .join("")
+                        : `<tr><td colspan="1">Select columns to display.</td></tr>`
+                    }
+                  </tbody>
+                </table>
+              </div>
+            `
+            : `<div class="content-area" style="margin-top: 16px;">
+                <strong>Member Information table not found.</strong>
+                <ul>
+                  <li>Please create a table named “Member Information” in Table Management.</li>
+                </ul>
+              </div>`
+        }
+      `;
+      const newButton = contentArea.querySelector("#newMemberInfo");
+      if (newButton && memberInfoKey) {
+        newButton.addEventListener("click", () => openMemberInfoModal(memberInfoKey));
+      }
+
+      const deleteButton = contentArea.querySelector("#deleteMemberInfo");
+      if (deleteButton) {
+        deleteButton.disabled = selectedRecordIndexes.size === 0;
+        deleteButton.addEventListener("click", () => {
+          if (selectedRecordIndexes.size === 0) return;
+          memberInfoRecords = memberInfoRecords.filter(
+            (_, index) => !selectedRecordIndexes.has(index),
+          );
+          selectedRecordIndexes = new Set();
+          saveMemberInfoRecords();
+          renderMemberInfoList(contentArea);
+        });
+      }
+
+      contentArea.querySelectorAll(".record-select").forEach((checkbox) => {
+        checkbox.addEventListener("change", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (event.target.checked) {
+            selectedRecordIndexes.add(index);
+          } else {
+            selectedRecordIndexes.delete(index);
+          }
+          const deleteBtn = contentArea.querySelector("#deleteMemberInfo");
+          if (deleteBtn) {
+            deleteBtn.disabled = selectedRecordIndexes.size === 0;
+          }
+        });
+      });
+
+      contentArea.querySelectorAll("tbody tr").forEach((row, rowIndex) => {
+        row.addEventListener("click", (event) => {
+          if (event.target.matches("input")) return;
+          const recordData = sortedRecords[rowIndex];
+          if (!recordData) return;
+          editingRecordIndex = recordData.index;
+          currentMemberRecord = recordData.record;
+          openMemberInfoModal(memberInfoKey);
+          populateMemberInfoForm(recordData.record, tableFields);
+        });
+      });
+
+      const columnsButton = contentArea.querySelector("#memberInfoColumnsButton");
+      if (columnsButton) {
+        columnsButton.addEventListener("click", () => {
+          openMemberInfoColumnsModal(tableFields);
+        });
+      }
+
+      contentArea.querySelectorAll("[data-sort-field]").forEach((header) => {
+        header.addEventListener("click", () => {
+          const menu = contentArea.querySelector("#memberInfoListMenu");
+          menu.dataset.sortField = header.dataset.sortField;
+          const rect = header.getBoundingClientRect();
+          menu.style.top = `${rect.bottom + window.scrollY + 6}px`;
+          menu.style.left = `${rect.left + window.scrollX}px`;
+          menu.classList.add("is-visible");
+        });
+      });
+
+      const menu = contentArea.querySelector("#memberInfoListMenu");
+      const filterControls = contentArea.querySelector("#memberInfoFilterControls");
+      const filterFieldSelect = contentArea.querySelector("#memberInfoFilterField");
+      const filterValueSelect = contentArea.querySelector("#memberInfoFilterValue");
+
+      if (menu) {
+        menu.querySelectorAll("[data-action]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const action = button.dataset.action;
+            const fieldName = menu.dataset.sortField;
+            if (action === "asc" || action === "desc") {
+              memberInfoViewState.sort.field = fieldName;
+              memberInfoViewState.sort.direction = action;
+              memberInfoViewState.filterField = null;
+              memberInfoViewState.filterValue = null;
+              renderMemberInfoList(contentArea);
+            }
+            if (action === "filter") {
+              filterControls.style.display = "block";
+              filterFieldSelect.innerHTML = `<option value="${fieldName}">${fieldName}</option>`;
+              filterValueSelect.innerHTML = '<option value="">Select value</option>';
+              const values = Array.from(
+                new Set(memberInfoRecords.map((record) => String(record[fieldName] ?? ""))),
+              ).filter((value) => value !== "");
+              values.forEach((value) => {
+                const option = document.createElement("option");
+                option.value = value;
+                option.textContent = value;
+                filterValueSelect.appendChild(option);
+              });
+              const existingRun = filterControls.querySelector(".run-filter");
+              if (!existingRun) {
+                const runButton = document.createElement("button");
+                runButton.type = "button";
+                runButton.textContent = "Run";
+                runButton.style.marginTop = "8px";
+                runButton.className = "primary run-filter";
+                filterControls.appendChild(runButton);
+                runButton.addEventListener("click", () => {
+                  memberInfoViewState.filterField = filterFieldSelect.value;
+                  memberInfoViewState.filterValue = filterValueSelect.value;
+                  renderMemberInfoList(contentArea);
+                });
+              }
+            }
+          });
+        });
+
+        window.addEventListener(
+          "click",
+          (event) => {
+            if (!menu.contains(event.target) && !event.target.dataset.sortField) {
+              menu.classList.remove("is-visible");
+              filterControls.style.display = "none";
+            }
+          },
+          { once: true },
+        );
+      }
+    };
+
+    const updateTableActions = () => {
+      const selects = tableListBody.querySelectorAll(".table-select");
+      const isSelected = Array.from(selects).some((checkbox) => checkbox.checked);
+      deleteButton.disabled = !isSelected;
+      cloneButton.disabled = !isSelected;
+    };
+
+    const STORAGE_KEY = "incform_tables_db";
+    const defaultTablesData = {
+      member_info: {
+        name: "Member Information",
+        fields: [
+          { name: "Member ID", type: "String" },
+          { name: "Name", type: "String" },
+          { name: "Locale", type: "String" },
+          { name: "Status", type: "Choice", choices: ["Active", "Inactive"] },
+          { name: "Kapisanan", type: "Choice", choices: ["Buklod", "Kadiwa", "Binhi"] },
+          { name: "Handog", type: "Choice", choices: ["Yes", "No"] },
+          { name: "Kalagayang Sibil", type: "Choice", choices: ["Single", "Married", "Widowed"] },
+          { name: "Member Photo", type: "Image" },
+        ],
+      },
+      membership: {
+        name: "Membership Categories",
+        fields: [
+          { name: "Category Name", type: "String" },
+          { name: "Active", type: "Checkbox" },
+        ],
+      },
+      locale: {
+        name: "Locale Directory",
+        fields: [
+          { name: "Locale Name", type: "String" },
+          { name: "Established Date", type: "Date" },
+        ],
+      },
+      forms: {
+        name: "Form Templates",
+        fields: [
+          { name: "Template Name", type: "String" },
+          { name: "Revision", type: "Number" },
+        ],
+      },
+    };
+
+    const normalizeTablesData = (data) => {
+      if (!data.member_info) {
+        data.member_info = structuredClone(defaultTablesData.member_info);
+        return data;
+      }
+      const choiceDefaults = {
+        Status: ["Active", "Inactive"],
+        Kapisanan: ["Buklod", "Kadiwa", "Binhi"],
+        Handog: ["Yes", "No"],
+        "Kalagayang Sibil": ["Single", "Married", "Widowed"],
+      };
+      data.member_info.fields = data.member_info.fields.map((field) => {
+        if (field.type === "Choice" && (!field.choices || field.choices.length === 0)) {
+          const defaults = choiceDefaults[field.name];
+          if (defaults) {
+            return { ...field, choices: defaults };
+          }
+        }
+        return field;
+      });
+      return data;
+    };
+
+    const loadTablesData = () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return structuredClone(defaultTablesData);
+      try {
+        return normalizeTablesData(JSON.parse(saved));
+      } catch (error) {
+        console.warn("Failed to parse saved table data, reverting to defaults.", error);
+        return structuredClone(defaultTablesData);
+      }
+    };
+
+    let tablesData = loadTablesData();
+    let memberInfoRecords = loadMemberInfoRecords();
+
+    let currentTableKey = null;
+    let draggedFieldIndex = null;
+
+    const renderTableList = () => {
+      tableListBody.innerHTML = Object.entries(tablesData)
+        .map(
+          ([key, data]) => `
+            <tr>
+              <td><input type="checkbox" class="table-select" /></td>
+              <td><button type="button" class="table-name" data-table="${key}">${data.name}</button></td>
+            </tr>
+          `,
+        )
+        .join("");
+
+      tableListBody.querySelectorAll(".table-select").forEach((checkbox) => {
+        checkbox.addEventListener("change", updateTableActions);
+      });
+      tableListBody.querySelectorAll(".table-name").forEach((button) => {
+        button.addEventListener("click", () => {
+          openTableConfig(button.dataset.table);
+        });
+      });
+    };
+
+    const renderFieldList = () => {
+      if (!currentTableKey) return;
+      const fields = tablesData[currentTableKey].fields;
+      fieldListBody.innerHTML = fields
+        .map(
+          (field, index) => `
+            <tr class="field-row" draggable="true" data-index="${index}">
+              <td><input type="checkbox" class="field-select" data-index="${index}" /></td>
+              <td>
+                <input
+                  type="text"
+                  class="field-name-input"
+                  data-index="${index}"
+                  value="${field.name}"
+                />
+              </td>
+              <td>
+                <select class="field-type-select" data-index="${index}">
+                  <option value="String" ${field.type === "String" ? "selected" : ""}>String</option>
+                  <option value="Choice" ${field.type === "Choice" ? "selected" : ""}>Choice</option>
+                  <option value="Date" ${field.type === "Date" ? "selected" : ""}>Date</option>
+                  <option value="Image" ${field.type === "Image" ? "selected" : ""}>Image</option>
+                  <option value="Checkbox" ${field.type === "Checkbox" ? "selected" : ""}>Checkbox</option>
+                  <option value="Number" ${field.type === "Number" ? "selected" : ""}>Number</option>
+                  <option value="Reference" ${field.type === "Reference" ? "selected" : ""}>Reference</option>
+                </select>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="field-choice-input"
+                  data-index="${index}"
+                  placeholder="Choice list"
+                  value="${field.choices ? field.choices.join(", ") : ""}"
+                />
+              </td>
+              <td>
+                <select class="field-reference-select" data-index="${index}">
+                  <option value="">Select table</option>
+                  ${Object.entries(tablesData)
+                    .map(
+                      ([key, data]) =>
+                        `<option value="${key}" ${
+                          field.referenceTable === key ? "selected" : ""
+                        }>${data.name}</option>`,
+                    )
+                    .join("")}
+                </select>
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="field-section-input"
+                  data-index="${index}"
+                  placeholder="Section name"
+                  value="${field.section ?? ""}"
+                />
+              </td>
+            </tr>
+          `,
+        )
+        .join("");
+
+      updateFieldActions();
+      fieldListBody.querySelectorAll(".field-select").forEach((checkbox) => {
+        checkbox.addEventListener("change", updateFieldActions);
+      });
+      fieldListBody.querySelectorAll(".field-name-input").forEach((input) => {
+        input.addEventListener("input", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
+          tablesData[currentTableKey].fields[index].name = event.target.value.trim() || "Untitled";
+          saveTablesData();
+        });
+      });
+      fieldListBody.querySelectorAll(".field-type-select").forEach((select) => {
+        select.addEventListener("change", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
+          tablesData[currentTableKey].fields[index].type = event.target.value;
+          saveTablesData();
+        });
+      });
+      fieldListBody.querySelectorAll(".field-choice-input").forEach((input) => {
+        input.addEventListener("input", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
+          const choices = event.target.value
+            .split(",")
+            .map((choice) => choice.trim())
+            .filter(Boolean);
+          tablesData[currentTableKey].fields[index].choices = choices;
+          saveTablesData();
+        });
+      });
+      fieldListBody.querySelectorAll(".field-reference-select").forEach((select) => {
+        select.addEventListener("change", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
+          tablesData[currentTableKey].fields[index].referenceTable = event.target.value || "";
+          saveTablesData();
+        });
+      });
+      fieldListBody.querySelectorAll(".field-section-input").forEach((input) => {
+        input.addEventListener("input", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (Number.isNaN(index) || !tablesData[currentTableKey]) return;
+          tablesData[currentTableKey].fields[index].section = event.target.value.trim();
+          saveTablesData();
+        });
+      });
+      fieldListBody.querySelectorAll(".field-row").forEach((row) => {
+        row.addEventListener("dragstart", (event) => {
+          draggedFieldIndex = Number(event.currentTarget.dataset.index);
+          event.currentTarget.classList.add("is-dragging");
+          event.dataTransfer.setData("text/plain", String(draggedFieldIndex));
+          event.dataTransfer.effectAllowed = "move";
+        });
+        row.addEventListener("dragend", (event) => {
+          event.currentTarget.classList.remove("is-dragging");
+          draggedFieldIndex = null;
+        });
+        row.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "move";
+        });
+        row.addEventListener("drop", (event) => {
+          event.preventDefault();
+          const targetIndex = Number(event.currentTarget.dataset.index);
+          const sourceIndex =
+            draggedFieldIndex ?? Number(event.dataTransfer.getData("text/plain"));
+          if (
+            Number.isNaN(sourceIndex) ||
+            Number.isNaN(targetIndex) ||
+            sourceIndex === targetIndex
+          ) {
+            return;
+          }
+          const fieldsList = tablesData[currentTableKey].fields;
+          const [movedField] = fieldsList.splice(sourceIndex, 1);
+          fieldsList.splice(targetIndex, 0, movedField);
+          saveTablesData();
+          renderFieldList();
+        });
+      });
+    };
+
+    const updateFieldActions = () => {
+      const isSelected = Array.from(fieldListBody.querySelectorAll(".field-select")).some(
+        (checkbox) => checkbox.checked,
+      );
+      deleteFieldButton.disabled = !isSelected;
+      cloneFieldButton.disabled = !isSelected;
+    };
+
+    const openTableConfig = (tableKey) => {
+      currentTableKey = tableKey;
+      const tableData = tablesData[tableKey];
+      if (!tableData) return;
+      tableConfig.hidden = false;
+      tableConfigTitle.textContent = `${tableData.name} Configuration`;
+      tableNameInput.value = tableData.name;
+      tableConfigStatus.textContent = "";
+      choiceInput.value = "";
+      referenceTableSelect.value = "";
+      refreshReferenceOptions();
+      if (fieldTypeSelect.value === "Choice") {
+        choiceField.classList.add("is-visible");
+      } else {
+        choiceField.classList.remove("is-visible");
+      }
+      if (fieldTypeSelect.value === "Reference") {
+        referenceField.classList.add("is-visible");
+      } else {
+        referenceField.classList.remove("is-visible");
+      }
+      renderFieldList();
+    };
+
+    const saveTablesData = () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tablesData));
+      if (tableConfigStatus) {
+        tableConfigStatus.textContent = "Saved to database.";
+      }
+    };
+
+    tableNameInput.addEventListener("input", (event) => {
+      if (!currentTableKey) return;
+      const newName = event.target.value.trim();
+      tablesData[currentTableKey].name = newName || "Untitled Table";
+      tableConfigTitle.textContent = `${tablesData[currentTableKey].name} Configuration`;
+      const tableButton = document.querySelector(`.table-name[data-table="${currentTableKey}"]`);
+      if (tableButton) {
+        tableButton.textContent = tablesData[currentTableKey].name;
+      }
+      saveTablesData();
+    });
+
+    fieldForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!currentTableKey) return;
+      const fieldName = fieldNameInput.value.trim();
+      const fieldType = fieldTypeSelect.value;
+      if (!fieldName || !fieldType) return;
+      const fieldData = { name: fieldName, type: fieldType };
+      if (fieldType === "Choice" && choiceInput.value.trim()) {
+        fieldData.choices = choiceInput.value
+          .split(",")
+          .map((choice) => choice.trim())
+          .filter(Boolean);
+      }
+      if (fieldType === "Reference" && referenceTableSelect.value) {
+        fieldData.referenceTable = referenceTableSelect.value;
+      }
+      tablesData[currentTableKey].fields.push(fieldData);
+      fieldNameInput.value = "";
+      fieldTypeSelect.value = "";
+      choiceInput.value = "";
+      choiceField.classList.remove("is-visible");
+      referenceTableSelect.value = "";
+      referenceField.classList.remove("is-visible");
+      renderFieldList();
+      saveTablesData();
+    });
+
+    deleteFieldButton.addEventListener("click", () => {
+      if (!currentTableKey) return;
+      const selections = Array.from(fieldListBody.querySelectorAll(".field-select"))
+        .filter((checkbox) => checkbox.checked)
+        .map((checkbox) => Number(checkbox.dataset.index));
+      tablesData[currentTableKey].fields = tablesData[currentTableKey].fields.filter(
+        (_, index) => !selections.includes(index),
+      );
+      renderFieldList();
+      saveTablesData();
+    });
+
+    cloneFieldButton.addEventListener("click", () => {
+      if (!currentTableKey) return;
+      const selections = Array.from(fieldListBody.querySelectorAll(".field-select"))
+        .filter((checkbox) => checkbox.checked)
+        .map((checkbox) => Number(checkbox.dataset.index));
+      const clones = selections.map((index) => {
+        const field = tablesData[currentTableKey].fields[index];
+        return { name: `${field.name} Copy`, type: field.type };
+      });
+      tablesData[currentTableKey].fields.push(...clones);
+      renderFieldList();
+      saveTablesData();
+    });
+
+    updateTableConfigButton.addEventListener("click", () => {
+      if (!currentTableKey) return;
+      saveTablesData();
+    });
+
+    fieldTypeSelect.addEventListener("change", () => {
+      if (fieldTypeSelect.value === "Choice") {
+        choiceField.classList.add("is-visible");
+      } else {
+        choiceField.classList.remove("is-visible");
+        choiceInput.value = "";
+      }
+
+      if (fieldTypeSelect.value === "Reference") {
+        refreshReferenceOptions();
+        referenceField.classList.add("is-visible");
+      } else {
+        referenceField.classList.remove("is-visible");
+        referenceTableSelect.value = "";
+      }
+    });
+
+    const refreshReferenceOptions = () => {
+      if (!referenceTableSelect) return;
+      const currentValue = referenceTableSelect.value;
+      referenceTableSelect.innerHTML = '<option value="">Select a table</option>';
+      Object.entries(tablesData).forEach(([key, data]) => {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = data.name;
+        referenceTableSelect.appendChild(option);
+      });
+      if (currentValue) {
+        referenceTableSelect.value = currentValue;
+      }
+    };
+
+    newTableButton.addEventListener("click", () => {
+      const nextIndex = Object.keys(tablesData).length + 1;
+      const newKey = `table_${Date.now()}`;
+      tablesData[newKey] = {
+        name: `New Table ${nextIndex}`,
+        fields: [],
+      };
+      saveTablesData();
+      renderTableList();
+      openTableConfig(newKey);
+    });
+
+    renderTableList();
+
+    let cropperState = null;
+
+    const openMemberInfoModal = (tableKeyOrName) => {
+      if (!memberInfoModal || !memberInfoFormFields) return;
+      tablesData = loadTablesData();
+      const memberInfoTable = tablesData[tableKeyOrName] ?? getTableByName(tableKeyOrName);
+      const tableFields = memberInfoTable?.fields ?? [];
+      const sections = {};
+      tableFields.forEach((field) => {
+        const sectionName = field.section?.trim() || "General";
+        if (!sections[sectionName]) sections[sectionName] = [];
+        sections[sectionName].push(field);
+      });
+      const sectionNames = Object.keys(sections);
+      let activeSection = sectionNames[0] || "General";
+      memberInfoSectionTabs.innerHTML = sectionNames
+        .map(
+          (section) =>
+            `<button type="button" class="${section === activeSection ? "active" : ""}" data-section="${section}">${section}</button>`,
+        )
+        .join("");
+      memberInfoFormFields.innerHTML = tableFields
+        .map((field) => {
+          const section = field.section?.trim() || "General";
+          return buildFieldInput(field).replace(
+            'class="modal-field"',
+            `class="modal-field" data-section="${section}"`,
+          );
+        })
+        .join("");
+      setActiveSection(activeSection);
+      attachFieldBehaviors(tableFields);
+      renderMemberTungkulinList();
+      memberInfoModal.classList.add("is-visible");
+      setSaveEnabled(false);
+    };
+
+    const closeMemberInfoModalView = () => {
+      memberInfoModal.classList.remove("is-visible");
+      memberInfoForm.reset();
+      memberInfoFormFields.innerHTML = "";
+      memberInfoSectionTabs.innerHTML = "";
+      cropperState = null;
+      editingRecordIndex = null;
+    };
+
+    const buildFieldInput = (field) => {
+      const fieldId = `member-${field.name.replace(/\s+/g, "-").toLowerCase()}`;
+      if (field.type === "Choice") {
+        const options = (field.choices ?? [])
+          .map((choice) => `<option>${choice}</option>`)
+          .join("");
+        return `
+          <div class="modal-field" draggable="true" data-field-name="${field.name}">
+            <label for="${fieldId}">${field.name}</label>
+            <select id="${fieldId}" data-field="${field.name}">
+              <option value="">Select ${field.name}</option>
+              ${options || ""}
+            </select>
+          </div>
+        `;
+      }
+      if (field.type === "Date") {
+        return `
+          <div class="modal-field" draggable="true" data-field-name="${field.name}">
+            <label for="${fieldId}">${field.name}</label>
+            <input type="date" id="${fieldId}" data-field="${field.name}" />
+          </div>
+        `;
+      }
+      if (field.type === "Reference") {
+        const records = tableRecords[field.referenceTable] ?? [];
+        const options = records
+          .map((record) => `<option value="${record.id}">${record.name}</option>`)
+          .join("");
+        const helperText = records.length === 0 ? "(No reference records available)" : "";
+        return `
+          <div class="modal-field" draggable="true" data-field-name="${field.name}">
+            <label for="${fieldId}">${field.name}</label>
+            <select id="${fieldId}" data-field="${field.name}">
+              <option value="">Select ${field.name}</option>
+              ${options}
+            </select>
+            <div style="font-size:11px;color:#64748b;margin-top:4px;">${helperText}</div>
+            ${
+              field.name === "Member"
+                ? `<button type="button" class="search-button" data-member-search="${fieldId}">🔍</button>`
+                : ""
+            }
+          </div>
+        `;
+      }
+      if (field.type === "Image") {
+        return `
+          <div class="modal-field" draggable="true" data-field-name="${field.name}">
+            <label for="${fieldId}">${field.name}</label>
+            <input type="file" id="${fieldId}" accept="image/*" data-field="${field.name}" />
+            <div class="cropper" data-cropper="${fieldId}">
+              <canvas width="200" height="200"></canvas>
+              <div class="cropper-controls">
+                <label for="${fieldId}-zoom">Zoom</label>
+                <input type="range" id="${fieldId}-zoom" min="1" max="3" step="0.1" value="1" />
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      if (field.type === "Checkbox") {
+        return `
+          <div class="modal-field" draggable="true" data-field-name="${field.name}">
+            <label for="${fieldId}">
+              <input type="checkbox" id="${fieldId}" data-field="${field.name}" />
+              ${field.name}
+            </label>
+          </div>
+        `;
+      }
+      return `
+        <div class="modal-field" draggable="true" data-field-name="${field.name}">
+          <label for="${fieldId}">${field.name}</label>
+          <input type="text" id="${fieldId}" data-field="${field.name}" />
+        </div>
+      `;
+    };
+
+    const attachFieldBehaviors = (tableFields) => {
+      tableFields.forEach((field) => {
+        if (field.type !== "Image") return;
+        const fieldId = `member-${field.name.replace(/\s+/g, "-").toLowerCase()}`;
+        const fileInput = document.getElementById(fieldId);
+        const cropper = memberInfoFormFields.querySelector(`[data-cropper="${fieldId}"]`);
+        if (!fileInput || !cropper) return;
+        const canvas = cropper.querySelector("canvas");
+        const zoomControl = cropper.querySelector(`#${fieldId}-zoom`);
+        const ctx = canvas.getContext("2d");
+        const state = {
+          image: null,
+          scale: 1,
+          offsetX: 0,
+          offsetY: 0,
+          dragging: false,
+          lastX: 0,
+          lastY: 0,
+        };
+        cropperState = state;
+
+        const draw = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          if (!state.image) return;
+          const baseScale = Math.max(
+            canvas.width / state.image.width,
+            canvas.height / state.image.height,
+          );
+          const scale = baseScale * state.scale;
+          const drawWidth = state.image.width * scale;
+          const drawHeight = state.image.height * scale;
+          const x = (canvas.width - drawWidth) / 2 + state.offsetX;
+          const y = (canvas.height - drawHeight) / 2 + state.offsetY;
+          ctx.drawImage(state.image, x, y, drawWidth, drawHeight);
+        };
+
+        fileInput.addEventListener("change", () => {
+          const file = fileInput.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+              state.image = img;
+              state.scale = 1;
+              state.offsetX = 0;
+              state.offsetY = 0;
+              draw();
+            };
+            img.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        });
+
+        zoomControl.addEventListener("input", (event) => {
+          state.scale = Number(event.target.value);
+          draw();
+        });
+
+        canvas.addEventListener("mousedown", (event) => {
+          state.dragging = true;
+          state.lastX = event.clientX;
+          state.lastY = event.clientY;
+        });
+
+        window.addEventListener("mouseup", () => {
+          state.dragging = false;
+        });
+
+        window.addEventListener("mousemove", (event) => {
+          if (!state.dragging) return;
+          const deltaX = event.clientX - state.lastX;
+          const deltaY = event.clientY - state.lastY;
+          state.lastX = event.clientX;
+          state.lastY = event.clientY;
+          state.offsetX += deltaX;
+          state.offsetY += deltaY;
+          draw();
+        });
+      });
+
+      memberInfoFormFields.querySelectorAll(".modal-field").forEach((fieldItem) => {
+        fieldItem.addEventListener("dragstart", (event) => {
+          event.dataTransfer.setData("text/plain", fieldItem.dataset.fieldName);
+          fieldItem.classList.add("is-dragging");
+        });
+        fieldItem.addEventListener("dragend", () => {
+          fieldItem.classList.remove("is-dragging");
+        });
+        fieldItem.addEventListener("dragover", (event) => {
+          event.preventDefault();
+        });
+        fieldItem.addEventListener("drop", (event) => {
+          event.preventDefault();
+          const sourceName = event.dataTransfer.getData("text/plain");
+          const targetName = fieldItem.dataset.fieldName;
+          if (!sourceName || !targetName || sourceName === targetName) return;
+          const memberInfoKey = getTableKeyByName("Member Information");
+          if (!memberInfoKey) return;
+          const fields = tablesData[memberInfoKey].fields;
+          const sourceIndex = fields.findIndex((item) => item.name === sourceName);
+          const targetIndex = fields.findIndex((item) => item.name === targetName);
+          if (sourceIndex === -1 || targetIndex === -1) return;
+          const [moved] = fields.splice(sourceIndex, 1);
+          fields.splice(targetIndex, 0, moved);
+          saveTablesData();
+          openMemberInfoModal(memberInfoKey);
+        });
+      });
+
+      memberInfoSectionTabs.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          setActiveSection(button.dataset.section);
+        });
+      });
+
+      attachMemberSearchHandlers(memberInfoFormFields);
+
+      memberInfoFormFields.querySelectorAll("input, select").forEach((input) => {
+        input.addEventListener("input", () => setSaveEnabled(true));
+        input.addEventListener("change", () => setSaveEnabled(true));
+      });
+    };
+
+    const setActiveSection = (section) => {
+      memberInfoSectionTabs.querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.section === section);
+      });
+      memberInfoFormFields.querySelectorAll(".modal-field").forEach((field) => {
+        field.style.display =
+          field.dataset.section === section ? "block" : "none";
+      });
+    };
+
+    const setSaveEnabled = (enabled) => {
+      const saveButton = memberInfoForm.querySelector("button[type=\"submit\"]");
+      if (saveButton) saveButton.disabled = !enabled;
+    };
+
+    const populateMemberInfoForm = (record, tableFields) => {
+      tableFields.forEach((field) => {
+        const fieldId = `member-${field.name.replace(/\s+/g, "-").toLowerCase()}`;
+        const input = document.getElementById(fieldId);
+        if (!input) return;
+        const value = record[field.name] ?? "";
+        if (field.type === "Checkbox") {
+          input.checked = value === "Yes" || value === true;
+          return;
+        }
+        if (field.type === "Image" && value) {
+          const cropper = memberInfoFormFields.querySelector(`[data-cropper="${fieldId}"]`);
+          const canvas = cropper?.querySelector("canvas");
+          const ctx = canvas?.getContext("2d");
+          if (canvas && ctx) {
+            const img = new Image();
+            img.onload = () => {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = value;
+          }
+          return;
+        }
+        input.value = value;
+      });
+      setSaveEnabled(false);
+    };
+
+    const formatMemberTungkulinValue = (field, value) => {
+      if (field.type === "Image") {
+        return value ? "Image" : "";
+      }
+      if (field.type === "Checkbox") {
+        return value ? "Yes" : "No";
+      }
+      return value ?? "";
+    };
+
+    const getMemberRecordId = (record, fallbackId = "") =>
+      record.__memberId ?? (record.Member === fallbackId ? fallbackId : "");
+
+    const renderMemberTungkulinList = () => {
+      if (!currentMemberRecord) {
+        memberTungkulinListSection.hidden = true;
+        return;
+      }
+      selectedTungkulinIndexes = new Set();
+      memberTungkulinRecords = loadMemberTungkulinRecords();
+      const memberTungkulinTable = getTableByName("Member Tungkulin Information");
+      const tableFields = memberTungkulinTable?.fields ?? [];
+      const memberId = currentMemberRecord["Member ID"] ?? "";
+      const related = memberTungkulinRecords
+        .map((record, index) => ({ record, index }))
+        .filter(({ record }) => getMemberRecordId(record, memberId) === memberId);
+      memberTungkulinListSection.hidden = false;
+      memberTungkulinListHead.innerHTML = `
+        <tr>
+          <th></th>
+          ${tableFields.map((field) => `<th>${field.name}</th>`).join("")}
+        </tr>
+      `;
+      if (related.length === 0) {
+        memberTungkulinListBody.innerHTML = `
+          <tr>
+            <td colspan="${tableFields.length + 1}" style="color:#64748b;">No records added.</td>
+          </tr>
+        `;
+      } else {
+        memberTungkulinListBody.innerHTML = related
+          .map(
+            ({ record, index }) => `
+              <tr>
+                <td><input type="checkbox" class="tungkulin-select" data-index="${index}" /></td>
+                ${tableFields
+                  .map((field) => `<td>${formatMemberTungkulinValue(field, record[field.name])}</td>`)
+                  .join("")}
+              </tr>
+            `,
+          )
+          .join("");
+      }
+
+      newMemberTungkulin.onclick = () => openMemberTungkulinModal();
+      deleteMemberTungkulin.disabled = selectedTungkulinIndexes.size === 0;
+      deleteMemberTungkulin.onclick = () => {
+        if (selectedTungkulinIndexes.size === 0) return;
+        memberTungkulinRecords = memberTungkulinRecords.filter(
+          (_, index) => !selectedTungkulinIndexes.has(index),
+        );
+        selectedTungkulinIndexes = new Set();
+        saveMemberTungkulinRecords();
+        renderMemberTungkulinList();
+      };
+
+      memberTungkulinListBody.querySelectorAll(".tungkulin-select").forEach((checkbox) => {
+        checkbox.addEventListener("change", (event) => {
+          const index = Number(event.target.dataset.index);
+          if (event.target.checked) {
+            const relatedRecord = related[index];
+            if (relatedRecord) selectedTungkulinIndexes.add(relatedRecord.index);
+          } else {
+            const relatedRecord = related[index];
+            if (relatedRecord) selectedTungkulinIndexes.delete(relatedRecord.index);
+          }
+          deleteMemberTungkulin.disabled = selectedTungkulinIndexes.size === 0;
+        });
+      });
+
+      memberTungkulinListBody.querySelectorAll("tr").forEach((row, rowIndex) => {
+        row.addEventListener("click", (event) => {
+          if (event.target.matches("input")) return;
+          const relatedRecord = related[rowIndex];
+          if (!relatedRecord) return;
+          openMemberTungkulinModal(relatedRecord);
+        });
+      });
+    };
+
+    const openMemberTungkulinModal = (relatedRecord = null) => {
+      const memberTungkulinTable = getTableByName("Member Tungkulin Information");
+      const tableFields = memberTungkulinTable?.fields ?? [];
+      memberTungkulinFields.innerHTML = tableFields
+        .map((field) => buildTungkulinFieldInput(field))
+        .join("");
+      attachMemberSearchHandlers(memberTungkulinFields);
+      const memberField = tableFields.find((field) => field.name === "Member");
+      if (memberField && currentMemberRecord) {
+        const memberFieldId = `tungkulin-${memberField.name.replace(/\\s+/g, "-").toLowerCase()}`;
+        const input = document.getElementById(memberFieldId);
+        if (input) {
+          input.value = getMemberDisplayName(currentMemberRecord);
+          input.dataset.memberId = currentMemberRecord["Member ID"] ?? "";
+        }
+      }
+      if (relatedRecord) {
+        editingTungkulinIndex = relatedRecord.index;
+        populateMemberTungkulinForm(relatedRecord.record, tableFields);
+      } else {
+        editingTungkulinIndex = null;
+      }
+      memberTungkulinModal.classList.add("is-visible");
+    };
+
+    const populateMemberTungkulinForm = (record, tableFields) => {
+      const memberRecords = loadMemberInfoRecords();
+      tableFields.forEach((field) => {
+        const fieldId = `tungkulin-${field.name.replace(/\\s+/g, "-").toLowerCase()}`;
+        const input = document.getElementById(fieldId);
+        if (!input) return;
+        const value = record[field.name] ?? "";
+        if (field.name === "Member") {
+          const memberId = record.__memberId ?? "";
+          const matched = memberRecords.find((item) => item["Member ID"] === memberId);
+          input.value = matched ? getMemberDisplayName(matched) : value;
+          input.dataset.memberId = memberId;
+          return;
+        }
+        input.value = value;
+      });
+    };
+
+    const buildTungkulinFieldInput = (field) => {
+      const fieldId = `tungkulin-${field.name.replace(/\\s+/g, "-").toLowerCase()}`;
+      if (field.type === "Choice") {
+        const options = (field.choices ?? [])
+          .map((choice) => `<option>${choice}</option>`)
+          .join("");
+        return `
+          <div class="modal-field">
+            <label for="${fieldId}">${field.name}</label>
+            <select id="${fieldId}">
+              <option value="">Select ${field.name}</option>
+              ${options}
+            </select>
+          </div>
+        `;
+      }
+      if (field.type === "Date") {
+        return `
+          <div class="modal-field">
+            <label for="${fieldId}">${field.name}</label>
+            <input type="date" id="${fieldId}" />
+          </div>
+        `;
+      }
+      if (field.type === "Reference" && field.name === "Member") {
+        return `
+          <div class="modal-field">
+            <label for="${fieldId}">${field.name}</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="text" id="${fieldId}" readonly />
+              <button type="button" class="search-button" data-member-search="${fieldId}">🔍</button>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="modal-field">
+          <label for="${fieldId}">${field.name}</label>
+          <input type="text" id="${fieldId}" />
+        </div>
+      `;
+    };
+
+    const attachMemberSearchHandlers = (container) => {
+      container.querySelectorAll("[data-member-search]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const fieldId = button.dataset.memberSearch;
+          openMemberSearchModal(fieldId);
+        });
+      });
+    };
+
+    const getMemberDisplayName = (record) =>
+      record["Name"] ?? record["Full Name"] ?? record["Member Name"] ?? "";
+
+    const openMemberSearchModal = (fieldId) => {
+      const records = loadMemberInfoRecords();
+      memberSearchBody.innerHTML = records
+        .map(
+          (record) => `
+            <tr data-member-id="${record["Member ID"] ?? ""}">
+              <td>${record["Member ID"] ?? ""}</td>
+              <td>${getMemberDisplayName(record)}</td>
+            </tr>
+          `,
+        )
+        .join("");
+      memberSearchModal.classList.add("is-visible");
+      memberSearchBody.querySelectorAll("tr").forEach((row) => {
+        row.addEventListener("click", () => {
+          const memberId = row.dataset.memberId;
+          const input = document.getElementById(fieldId);
+          if (input) {
+            input.value = getMemberDisplayName(records.find((record) => record["Member ID"] === memberId) || {});
+            input.dataset.memberId = memberId;
+          }
+          memberSearchModal.classList.remove("is-visible");
+        });
+      });
+    };
+
+    closeMemberSearch?.addEventListener("click", () => {
+      memberSearchModal.classList.remove("is-visible");
+    });
+
+    memberSearchModal?.addEventListener("click", (event) => {
+      if (event.target === memberSearchModal) {
+        memberSearchModal.classList.remove("is-visible");
+      }
+    });
+
+    const openMemberInfoColumnsModal = (tableFields) => {
+      if (!memberInfoColumnsModal) return;
+      availableColumns.innerHTML = "";
+      selectedColumns.innerHTML = "";
+      const selected = Array.from(memberInfoViewState.visibleColumns);
+      tableFields.forEach((field) => {
+        const option = document.createElement("option");
+        option.value = field.name;
+        option.textContent = field.name;
+        if (selected.includes(field.name)) {
+          selectedColumns.appendChild(option);
+        } else {
+          availableColumns.appendChild(option);
+        }
+      });
+      memberInfoColumnsModal.classList.add("is-visible");
+    };
+
+    const closeMemberInfoColumnsModal = () => {
+      memberInfoColumnsModal.classList.remove("is-visible");
+    };
+
+    closeMemberInfoColumns?.addEventListener("click", closeMemberInfoColumnsModal);
+    cancelMemberInfoColumns?.addEventListener("click", closeMemberInfoColumnsModal);
+    memberInfoColumnsModal?.addEventListener("click", (event) => {
+      if (event.target === memberInfoColumnsModal) {
+        closeMemberInfoColumnsModal();
+      }
+    });
+
+    saveMemberInfoColumns?.addEventListener("click", () => {
+      memberInfoViewState.visibleColumns = new Set(
+        Array.from(selectedColumns.options).map((option) => option.value),
+      );
+      localStorage.setItem(
+        MEMBER_INFO_COLUMNS_KEY,
+        JSON.stringify(Array.from(memberInfoViewState.visibleColumns)),
+      );
+      closeMemberInfoColumnsModal();
+      renderMemberInfoList(contentMap.records);
+    });
+
+    const moveSelectedOptions = (fromSelect, toSelect) => {
+      Array.from(fromSelect.selectedOptions).forEach((option) => {
+        toSelect.appendChild(option);
+      });
+    };
+
+    addColumn?.addEventListener("click", () => {
+      moveSelectedOptions(availableColumns, selectedColumns);
+    });
+
+    removeColumn?.addEventListener("click", () => {
+      moveSelectedOptions(selectedColumns, availableColumns);
+    });
+
+    closeMemberInfoModal.addEventListener("click", closeMemberInfoModalView);
+    cancelMemberInfo.addEventListener("click", closeMemberInfoModalView);
+    memberInfoModal.addEventListener("click", (event) => {
+      if (event.target === memberInfoModal) {
+        closeMemberInfoModalView();
+      }
+    });
+
+    memberInfoForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const memberInfoTable = getTableByName("Member Information");
+      const tableFields = memberInfoTable?.fields ?? [];
+      const newRecord = {};
+      tableFields.forEach((field) => {
+        const fieldId = `member-${field.name.replace(/\s+/g, "-").toLowerCase()}`;
+        if (field.type === "Image") {
+          const cropper = memberInfoFormFields.querySelector(`[data-cropper="${fieldId}"]`);
+          const canvas = cropper?.querySelector("canvas");
+          if (canvas && cropperState?.image) {
+            newRecord[field.name] = canvas.toDataURL("image/png");
+          }
+          return;
+        }
+        const input = document.getElementById(fieldId);
+        if (!input) return;
+        if (field.type === "Reference") {
+          const selectedOption = input.selectedOptions?.[0];
+          newRecord[field.name] = selectedOption?.textContent ?? "";
+          return;
+        }
+        if (field.type === "Checkbox") {
+          newRecord[field.name] = input.checked ? "Yes" : "No";
+          return;
+        }
+        newRecord[field.name] = input.value ?? "";
+      });
+      if (editingRecordIndex !== null) {
+        memberInfoRecords[editingRecordIndex] = newRecord;
+      } else {
+        memberInfoRecords.unshift(newRecord);
+      }
+      saveMemberInfoRecords();
+      renderMemberInfoList(contentMap.records);
+      closeMemberInfoModalView();
+    });
+
+    memberTungkulinForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const memberTungkulinTable = getTableByName("Member Tungkulin Information");
+      const tableFields = memberTungkulinTable?.fields ?? [];
+      const newRecord = {};
+      tableFields.forEach((field) => {
+        const fieldId = `tungkulin-${field.name.replace(/\\s+/g, "-").toLowerCase()}`;
+        const input = document.getElementById(fieldId);
+        if (!input) return;
+        if (field.name === "Member") {
+          newRecord[field.name] = input.value ?? "";
+          if (input.dataset.memberId) {
+            newRecord.__memberId = input.dataset.memberId;
+          }
+          return;
+        }
+        newRecord[field.name] = input.value ?? "";
+      });
+      memberTungkulinRecords = loadMemberTungkulinRecords();
+      if (currentMemberRecord) {
+        newRecord.__memberId = newRecord.__memberId ?? currentMemberRecord["Member ID"] ?? "";
+      }
+      if (editingTungkulinIndex !== null) {
+        memberTungkulinRecords[editingTungkulinIndex] = newRecord;
+      } else {
+        memberTungkulinRecords.unshift(newRecord);
+      }
+      saveMemberTungkulinRecords();
+      memberTungkulinModal.classList.remove("is-visible");
+      renderMemberTungkulinList();
+    });
+
+    closeMemberTungkulin?.addEventListener("click", () => {
+      memberTungkulinModal.classList.remove("is-visible");
+      editingTungkulinIndex = null;
+    });
+    cancelMemberTungkulin?.addEventListener("click", () => {
+      memberTungkulinModal.classList.remove("is-visible");
+      editingTungkulinIndex = null;
+    });
+    memberTungkulinModal?.addEventListener("click", (event) => {
+      if (event.target === memberTungkulinModal) {
+        memberTungkulinModal.classList.remove("is-visible");
+        editingTungkulinIndex = null;
+      }
+    });
+
+  </script>
+</body>
+</html>
