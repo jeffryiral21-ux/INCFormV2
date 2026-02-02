@@ -992,14 +992,7 @@
           </div>
           <div class="table-list scrollable-table" style="margin-top: 12px;">
             <table>
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Role</th>
-                  <th>Start Date</th>
-                  <th>End Date</th>
-                </tr>
-              </thead>
+              <thead id="memberTungkulinListHead"></thead>
               <tbody id="memberTungkulinListBody"></tbody>
             </table>
           </div>
@@ -1113,6 +1106,7 @@
     const addColumn = document.getElementById("addColumn");
     const removeColumn = document.getElementById("removeColumn");
     const memberTungkulinListSection = document.getElementById("memberTungkulinListSection");
+    const memberTungkulinListHead = document.getElementById("memberTungkulinListHead");
     const memberTungkulinListBody = document.getElementById("memberTungkulinListBody");
     const newMemberTungkulin = document.getElementById("newMemberTungkulin");
     const deleteMemberTungkulin = document.getElementById("deleteMemberTungkulin");
@@ -2187,12 +2181,7 @@
         });
       });
 
-      memberInfoFormFields.querySelectorAll("[data-member-search]").forEach((button) => {
-        button.addEventListener("click", () => {
-          const fieldId = button.dataset.memberSearch;
-          openMemberSearchModal(fieldId);
-        });
-      });
+      attachMemberSearchHandlers(memberInfoFormFields);
 
       memberInfoFormFields.querySelectorAll("input, select").forEach((input) => {
         input.addEventListener("input", () => setSaveEnabled(true));
@@ -2244,6 +2233,16 @@
       setSaveEnabled(false);
     };
 
+    const formatMemberTungkulinValue = (field, value) => {
+      if (field.type === "Image") {
+        return value ? "Image" : "";
+      }
+      if (field.type === "Checkbox") {
+        return value ? "Yes" : "No";
+      }
+      return value ?? "";
+    };
+
     const renderMemberTungkulinList = () => {
       if (!currentMemberRecord) {
         memberTungkulinListSection.hidden = true;
@@ -2251,21 +2250,37 @@
       }
       selectedTungkulinIndexes = new Set();
       memberTungkulinRecords = loadMemberTungkulinRecords();
+      const memberTungkulinTable = getTableByName("Member Tungkulin Information");
+      const tableFields = memberTungkulinTable?.fields ?? [];
       const memberId = currentMemberRecord["Member ID"] ?? "";
       const related = memberTungkulinRecords.filter((record) => record.Member === memberId);
       memberTungkulinListSection.hidden = false;
-      memberTungkulinListBody.innerHTML = related
-        .map(
-          (record, index) => `
-            <tr>
-              <td><input type="checkbox" class="tungkulin-select" data-index="${index}" /></td>
-              <td>${record.Role ?? ""}</td>
-              <td>${record["Start Date"] ?? ""}</td>
-              <td>${record["End Date"] ?? ""}</td>
-            </tr>
-          `,
-        )
-        .join("");
+      memberTungkulinListHead.innerHTML = `
+        <tr>
+          <th></th>
+          ${tableFields.map((field) => `<th>${field.name}</th>`).join("")}
+        </tr>
+      `;
+      if (related.length === 0) {
+        memberTungkulinListBody.innerHTML = `
+          <tr>
+            <td colspan="${tableFields.length + 1}" style="color:#64748b;">No records added.</td>
+          </tr>
+        `;
+      } else {
+        memberTungkulinListBody.innerHTML = related
+          .map(
+            (record, index) => `
+              <tr>
+                <td><input type="checkbox" class="tungkulin-select" data-index="${index}" /></td>
+                ${tableFields
+                  .map((field) => `<td>${formatMemberTungkulinValue(field, record[field.name])}</td>`)
+                  .join("")}
+              </tr>
+            `,
+          )
+          .join("");
+      }
 
       newMemberTungkulin.onclick = () => openMemberTungkulinModal();
       deleteMemberTungkulin.disabled = selectedTungkulinIndexes.size === 0;
@@ -2299,6 +2314,7 @@
       memberTungkulinFields.innerHTML = tableFields
         .map((field) => buildTungkulinFieldInput(field))
         .join("");
+      attachMemberSearchHandlers(memberTungkulinFields);
       memberTungkulinModal.classList.add("is-visible");
     };
 
@@ -2345,13 +2361,26 @@
       `;
     };
 
+    const attachMemberSearchHandlers = (container) => {
+      container.querySelectorAll("[data-member-search]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const fieldId = button.dataset.memberSearch;
+          openMemberSearchModal(fieldId);
+        });
+      });
+    };
+
+    const getMemberDisplayName = (record) =>
+      record["Name"] ?? record["Full Name"] ?? record["Member Name"] ?? "";
+
     const openMemberSearchModal = (fieldId) => {
-      memberSearchBody.innerHTML = memberInfoRecords
+      const records = loadMemberInfoRecords();
+      memberSearchBody.innerHTML = records
         .map(
           (record) => `
             <tr data-member-id="${record["Member ID"] ?? ""}">
               <td>${record["Member ID"] ?? ""}</td>
-              <td>${record["Name"] ?? ""}</td>
+              <td>${getMemberDisplayName(record)}</td>
             </tr>
           `,
         )
